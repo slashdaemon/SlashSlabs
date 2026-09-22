@@ -1,0 +1,17 @@
+plugins {
+    id "net.fabricmc.fabric-loom" version "1.17.21" apply false
+}
+
+def bands = ['26.1.2', '26.2', '26.3']
+
+// Every band jar into build/release/.
+tasks.register("buildAll") {
+    group = "build"
+    dependsOn bands.collect { ":versions:${it}:build" }
+    doLast {
+        copy {
+            bands.each { b -> from(project(":versions:${b}").layout.buildDirectory.dir("libs")) { include "*.jar"; exclude "*-sources.jar" } }
+            into layout.buildDirectory.dir("release")
+        }
+    }
+}

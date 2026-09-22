@@ -1,0 +1,58 @@
+{
+ "variants": {
+  "tint=0,type=bottom,waterlogged=false": {
+   "model": "slashslabs:block/bluemap/grass_slab_bottom"
+  },
+  "tint=0,type=bottom,waterlogged=true": {
+   "model": "slashslabs:block/bluemap/grass_slab_bottom"
+  },
+  "tint=0,type=top,waterlogged=false": {
+   "model": "slashslabs:block/bluemap/grass_slab_top"
+  },
+  "tint=0,type=top,waterlogged=true": {
+   "model": "slashslabs:block/bluemap/grass_slab_top"
+  },
+  "tint=0,type=double,waterlogged=false": {
+   "model": "minecraft:block/grass_block"
+  },
+  "tint=0,type=double,waterlogged=true": {
+   "model": "minecraft:block/grass_block"
+  },
+  "tint=1,type=bottom,waterlogged=false": {
+   "model": "slashslabs:block/bluemap/grass_slab_bottom"
+  },
+  "tint=1,type=bottom,waterlogged=true": {
+   "model": "slashslabs:block/bluemap/grass_slab_bottom"
+  },
+  "tint=1,type=top,waterlogged=false": {
+   "model": "slashslabs:block/bluemap/grass_slab_top"
+  },
+  "tint=1,type=top,waterlogged=true": {
+   "model": "slashslabs:block/bluemap/grass_slab_top"
+  },
+  "tint=1,type=double,waterlogged=false": {
+   "model": "minecraft:block/grass_block"
+  },
+  "tint=1,type=double,waterlogged=true": {
+   "model": "minecraft:block/grass_block"
+  },
+  "tint=2,type=bottom,waterlogged=false": {
+   "model": "slashslabs:block/bluemap/grass_slab_bottom"
+  },
+  "tint=2,type=bottom,waterlogged=true": {
+   "model": "slashslabs:block/bluemap/grass_slab_bottom"
+  },
+  "tint=2,type=top,waterlogged=false": {
+   "model": "slashslabs:block/bluemap/grass_slab_top"
+  },
+  "tint=2,type=top,waterlogged=true": {
+   "model": "slashslabs:block/bluemap/grass_slab_top"
+  },
+  "tint=2,type=double,waterlogged=false": {
+   "model": "minecraft:block/grass_block"
+  },
+  "tint=2,type=double,waterlogged=true": {
+   "model": "minecraft:block/grass_block"
+  }
+ }
+}

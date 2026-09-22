@@ -1,0 +1,16 @@
+pluginManagement {
+    repositories {
+        maven { name = 'Fabric'; url = 'https://maven.fabricmc.net/' }
+        gradlePluginPortal()
+        mavenCentral()
+    }
+}
+
+plugins {
+    id 'org.gradle.toolchains.foojay-resolver-convention' version '1.0.0'
+}
+
+rootProject.name = 'slashslabs'
+
+// One band per Minecraft line. Each band compiles the shared tree (src/) plus its compat/ variants.
+['26.1.2', '26.2', '26.3'].each { include ":versions:${it}" }

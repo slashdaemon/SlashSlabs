@@ -1,0 +1,77 @@
+// Composes one band jar: the shared tree (src/main) plus the compat/<variant>/ directories the
+// band lists in ext.band.compat. A variant holds only the calls or data that differ between
+// Minecraft lines; it must never shadow a shared file.
+apply plugin: "net.fabricmc.fabric-loom"
+
+def root = rootProject.projectDir
+version = ""
+group = rootProject.maven_group
+
+base {
+    archivesName = "${rootProject.archives_base_name}-${rootProject.mod_version}+mc${project.minecraft_version}-fabric"
+}
+
+java {
+    toolchain { languageVersion = JavaLanguageVersion.of(25) }
+    withSourcesJar()
+}
+
+tasks.withType(JavaCompile).configureEach {
+    it.options.release = 25
+    it.options.encoding = "UTF-8"
+}
+
+repositories {
+    maven { name = "Nucleoid"; url = "https://maven.nucleoid.xyz/" }
+    maven { name = "Modrinth"; url = "https://api.modrinth.com/maven"; content { includeGroup "maven.modrinth" } }
+}
+
+sourceSets.main.java.srcDirs = [new File(root, "src/main/java")] + band.compat.collect { new File(root, "compat/${it}/java") }
+sourceSets.main.resources.srcDirs = [new File(root, "src/main/resources")] + band.compat.collect { new File(root, "compat/${it}/resources") }
+sourceSets.test.java.srcDirs = [new File(root, "src/test/java")]
+
+loom {
+    runs {
+        server {
+            serverWithGui()
+            vmArg "-Djava.awt.headless=true"
+        }
+    }
+}
+
+dependencies {
+    minecraft "com.mojang:minecraft:${project.minecraft_version}"
+    implementation "net.fabricmc:fabric-loader:${project.loader_version}"
+    implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
+
+    ["polymer-core", "polymer-blocks", "polymer-resource-pack", "polymer-sound-patcher"].each {
+        implementation "eu.pb4:${it}:${project.polymer_version}"
+        include "eu.pb4:${it}:${project.polymer_version}"
+    }
+    // Runtime-only nests: AutoHost serves the pack; the sound patcher needs resource-pack-extras
+    // (declared in its fabric.mod.json, not its POM, so Loader silently drops the patcher without it).
+    ["polymer-autohost", "polymer-resource-pack-extras"].each {
+        implementation "eu.pb4:${it}:${project.polymer_version}"
+        include "eu.pb4:${it}:${project.polymer_version}"
+    }
+
+    // Compatibility testing only, never bundled: -Pbluemap=5.27-fabric
+    if (project.hasProperty("bluemap")) localRuntime "maven.modrinth:bluemap:${project.bluemap}"
+
+    testImplementation "org.junit.jupiter:junit-jupiter:5.11.4"
+    testRuntimeOnly "org.junit.platform:junit-platform-launcher"
+}
+
+test { useJUnitPlatform() }
+
+processResources {
+    def props = [version: rootProject.mod_version, minecraft_dep: project.minecraft_dep, loader_version: project.loader_version]
+    inputs.properties props
+    filesMatching("fabric.mod.json") { expand props }
+}
+
+jar {
+    from(new File(root, "LICENSE")) { rename { "${it}_slashslabs" } }
+    from(new File(root, "THIRD_PARTY_NOTICES.md"))
+    from(new File(root, "licenses")) { into "licenses" }
+}

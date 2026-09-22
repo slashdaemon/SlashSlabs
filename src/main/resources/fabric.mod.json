@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "id": "slashslabs",
+  "version": "${version}",
+  "name": "SlashSlabs",
+  "description": "Server-side terrain slabs: one-block rises get a half-slab step at world generation, so you can walk the world without jumping. Vanilla clients need no mod; a server resource pack retextures the slabs.",
+  "authors": ["Slash"],
+  "contact": {
+    "homepage": "https://theblock.academy",
+    "sources": "https://github.com/slashdaemon/SlashSlabs",
+    "issues": "https://github.com/slashdaemon/SlashSlabs/issues"
+  },
+  "license": "All-Rights-Reserved",
+  "icon": "assets/slashslabs/icon.png",
+  "environment": "*",
+  "entrypoints": {
+    "main": ["com.slashslabs.SlashSlabs"]
+  },
+  "mixins": ["slashslabs.mixins.json"],
+  "depends": {
+    "fabricloader": ">=0.18.4",
+    "minecraft": "${minecraft_dep}",
+    "java": ">=25",
+    "fabric-api": "*"
+  }
+}

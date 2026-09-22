@@ -1,0 +1,22 @@
+{
+ "variants": {
+  "type=bottom,waterlogged=false": {
+   "model": "slashslabs:block/bluemap/sand_slab_bottom"
+  },
+  "type=bottom,waterlogged=true": {
+   "model": "slashslabs:block/bluemap/sand_slab_bottom"
+  },
+  "type=top,waterlogged=false": {
+   "model": "slashslabs:block/bluemap/sand_slab_top"
+  },
+  "type=top,waterlogged=true": {
+   "model": "slashslabs:block/bluemap/sand_slab_top"
+  },
+  "type=double,waterlogged=false": {
+   "model": "minecraft:block/sand"
+  },
+  "type=double,waterlogged=true": {
+   "model": "minecraft:block/sand"
+  }
+ }
+}

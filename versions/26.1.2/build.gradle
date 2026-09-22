@@ -1,0 +1,2 @@
+ext.band = [compat: ["loot-legacy"]]
+apply from: "${rootDir}/gradle/band.gradle"
