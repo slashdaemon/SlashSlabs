@@ -38,9 +38,18 @@ EYE = 1.62
 # TestField.PROFILE -- the fixture's height along x. Expectations are derived from this, not
 # copied from docs/TESTING.md, so a fixture change moves the assertions with it.
 PROFILE = [0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 4, 4, 4, 4, 5, 5, 5, 5]
-STRIP, SLAB_X = 5, 3           # strip width (z), and a column that carries a grass slab
-SM = (0, 120, 0)               # smoothed fixture origin
-RAW = (0, 120, 100)            # unsmoothed control fixture origin
+STRIP, STRIPS, SLAB_X = 5, 6, 3   # strip width (z), strip count, and a column carrying a grass slab
+LENGTH = len(PROFILE)
+SM = (0, 120, 0)               # smoothed fixture origin        -- relocated by pick_site()
+RAW = (0, 120, 100)            # unsmoothed control fixture origin -- relocated by pick_site()
+
+# Where precipitation is SNOW the smoother turns *every* soil step into a snow layer
+# (TerrainSmoother: `choice.kind() == SNOW || (snowy && soil)`), so grass and dirt strips
+# never receive a slab. Building at the command source's spawn therefore makes the material
+# assertions seed-dependent -- on the 26.1.2 dev seed spawn is frozen_ocean and `mine` can
+# never pass. pick_site() moves both fixtures into one of these instead.
+TEMPERATE = ["minecraft:plains", "minecraft:sunflower_plains", "minecraft:forest",
+             "minecraft:birch_forest", "minecraft:meadow", "minecraft:savanna"]
 
 
 def first_rise(profile):
@@ -102,6 +111,9 @@ class Server:
     def block_is(self, pos, block):
         return "Test passed" in self.cmd(f"execute if block {pos[0]} {pos[1]} {pos[2]} {block}")
 
+    def biome_is(self, pos, biome):
+        return "Test passed" in self.cmd(f"execute if biome {pos[0]} {pos[1]} {pos[2]} {biome}")
+
     def pos_of(self, player):
         # "<player> has the following entity data: [0.5d, 121.0d, 2.5d]"
         out = self.cmd(f"data get entity {player} Pos")
@@ -128,6 +140,45 @@ def client_log(instance):
     return None
 
 
+def pick_site(s, player, y=120):
+    """Move both fixtures into a single temperate biome and load their chunks.
+
+    Rebinds the SM/RAW globals so every check picks the new origin up. Returns False when
+    no candidate biome covers a whole footprint -- the material assertions are meaningless
+    under snow precipitation, so the tier should abort rather than report a bogus failure.
+    """
+    global SM, RAW
+    gap = LENGTH + 12                       # control field sits beside the smoothed one, in +x
+    for b in TEMPERATE:
+        m = re.search(r"\[(-?\d+), *(?:~|-?\d+), *(-?\d+)]", s.cmd(f"locate biome {b}"))
+        if not m:
+            continue
+        bx, bz = int(m.group(1)), int(m.group(2))
+        for dx, dz in ((0, 0), (48, 0), (0, 48), (48, 48), (-48, 0), (0, -48)):
+            x, z = bx + dx, bz + dz
+            # Stand between the fixtures: the biome probes and the build both need the
+            # chunks loaded, and view distance comfortably covers the compact footprint.
+            s.cmd(f"tp {player} {x + gap // 2} {y + 30} {z + STRIP}")
+            time.sleep(2)
+            # Only the strips the asserted checks actually touch must share a biome:
+            # strip 0 (walk, mine, visual), strip 1 (place), and the control field.
+            need = [(x + SLAB_X, y, z + STRIP // 2),
+                    (x + 2, y, z + (STRIP + 1) + STRIP // 2),
+                    (x + LENGTH - 4, y, z + STRIP // 2),
+                    (x + gap + SLAB_X, y, z + STRIP // 2)]
+            if not all(s.biome_is(c, b) for c in need):
+                continue
+            SM, RAW = (x, y, z), (x + gap, y, z)
+            outer = sum(s.biome_is((x + SLAB_X, y, z + st * (STRIP + 1) + STRIP // 2), b)
+                        for st in range(STRIPS))
+            print(f"fixture site: {b} at {x} {y} {z}"
+                  + ("" if outer == STRIPS else
+                     f"  ({outer}/{STRIPS} strips in-biome — the tint-seam snapshot may "
+                     "span a boundary)"))
+            return True
+    return False
+
+
 # ---- checks
 
 def check_join(ck, s, player, instance):
@@ -152,16 +203,20 @@ def walk(s, player, origin, seconds=7):
 
 
 def check_walk(ck, s, player):
+    # PROFILE indices are origin-relative, so compare the walked distance, not world x --
+    # these read the same only while the fixture sits at x=0, which it no longer does.
     end_y = SM[1] + PROFILE[CLIFF_X - 1] + 1          # feet on the highest step before the cliff
     p = walk(s, player, SM)
-    ok = p and CLIFF_X - 1.5 <= p[0] < CLIFF_X and abs(p[1] - end_y) < 0.1
+    dx = p[0] - SM[0] if p else None
+    ok = p and CLIFF_X - 1.5 <= dx < CLIFF_X and abs(p[1] - end_y) < 0.1
     ck("walk: climbs the smoothed rises, stops at the cliff", bool(ok),
-       f"x={p[0]:.1f} y={p[1]:.1f} (want x in [{CLIFF_X - 1.5}, {CLIFF_X}), y={end_y})" if p else "no position")
+       f"dx={dx:.1f} y={p[1]:.1f} (want dx in [{CLIFF_X - 1.5}, {CLIFF_X}), y={end_y})" if p else "no position")
 
     p = walk(s, player, RAW)
-    ok = p and STEP_X - 1.5 <= p[0] < STEP_X and abs(p[1] - (RAW[1] + 1)) < 0.1
+    dx = p[0] - RAW[0] if p else None
+    ok = p and STEP_X - 1.5 <= dx < STEP_X and abs(p[1] - (RAW[1] + 1)) < 0.1
     ck("walk: control — unsmoothed field stops at the first rise", bool(ok),
-       f"x={p[0]:.1f} y={p[1]:.1f} (want x in [{STEP_X - 1.5}, {STEP_X}), y={RAW[1] + 1})" if p else "no position")
+       f"dx={dx:.1f} y={p[1]:.1f} (want dx in [{STEP_X - 1.5}, {STEP_X}), y={RAW[1] + 1})" if p else "no position")
 
 
 def check_sprint(ck, s, player):
@@ -186,9 +241,10 @@ def check_step_height(ck, s, player, info):
     ck("step height: attribute is 1.0", bool(m) and abs(float(m.group(1)) - 1.0) < 0.01, out.strip()[:80])
     p = walk(s, player, RAW)
     end_y = RAW[1] + PROFILE[CLIFF_X - 1] + 1
-    ok = p and CLIFF_X - 1.5 <= p[0] < CLIFF_X and abs(p[1] - end_y) < 0.1
+    dx = p[0] - RAW[0] if p else None                 # origin-relative, as in check_walk
+    ok = p and CLIFF_X - 1.5 <= dx < CLIFF_X and abs(p[1] - end_y) < 0.1
     ck("step height: walks the unsmoothed field to the cliff", bool(ok),
-       f"x={p[0]:.1f} y={p[1]:.1f}" if p else "no position")
+       f"dx={dx:.1f} y={p[1]:.1f}" if p else "no position")
     s.cmd(f"kill {player}")
     time.sleep(2)
     s.cmd(f"spawnpoint {player} {SM[0]} {SM[1] + 1} {SM[2]}")
@@ -331,6 +387,10 @@ def main(argv=None):
     ck = Checks()
     if player:
         s.cmd(f"gamemode creative {player}")
+        if not pick_site(s, player):
+            print("no temperate biome found within the locate radius — every soil step would "
+                  "be a snow layer, so the material checks cannot mean anything here.")
+            return 2
         s.build(SM)
         s.build(RAW, raw=True)
         time.sleep(1)
