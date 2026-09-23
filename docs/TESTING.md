@@ -5,6 +5,11 @@ what it showed. Everything here ran on MC 26.1.2 unless a band is named.
 
 ## Harness
 
+`python scripts/regress.py <doctor|quick|bands|gate|props|client|full>` runs these in a safe
+order, asserts the server's real config, cleans up between tiers and writes
+`build/regression/<ts>/report.md`. The ordering rules and the change→tier mapping live in
+`.claude/skills/slashslabs-testkit/SKILL.md`. The individual tools:
+
 | Tool | What it does |
 |---|---|
 | `./gradlew :versions:26.1.2:test` | JUnit: rise detection, colour maths, palette fitting (12 tests) |
@@ -14,6 +19,7 @@ what it showed. Everything here ran on MC 26.1.2 unless a band is named.
 | `python scripts/determinism.py 8` | Same seed, three generation orders + one run with smoothing off |
 | `python scripts/survey.py 5` | M2 survey (see `SURVEY.md`) |
 | `python scripts/client.py …` | Drives a Prism client on this PC: launch/auto-join, snap, keys, chat, clicks |
+| `python scripts/clienttest.py` | Replays the M0 checks below against a `--keep` server (attended: it takes over the keyboard and mouse) |
 
 Prism instances made for this: `SlashSlabs-Vanilla-26.1.2` (stock vanilla, no loader) and
 `SlashSlabs-Voxy-26.1.2` (Fabric API + Sodium + Voxy 0.2.18).

@@ -5,7 +5,8 @@
     python scripts/client.py key <key> [<key> ...]      e.g. f1, f3, esc, t, enter, shift+f3
     python scripts/client.py hold <key> <seconds>       hold a key down (w, space, shift …)
     python scripts/client.py chat "/command ..."        opens chat, types, sends
-    python scripts/client.py click <x> <y> [right]      in snap pixel space
+    python scripts/client.py click <x> <y> [right]      in snap pixel space (moves the cursor)
+    python scripts/client.py mousehold <secs> [right]   button held at the crosshair, cursor unmoved
     python scripts/client.py stop
 
 Nothing is sent unless the Minecraft window really holds the foreground (a synthetic key would
@@ -150,10 +151,13 @@ def main(argv):
                                  f"[SSK]::mouse_event({down}, 0, 0, 0, [UIntPtr]::Zero)", "Start-Sleep -Milliseconds 80",
                                  f"[SSK]::mouse_event({up}, 0, 0, 0, [UIntPtr]::Zero)"]))
         return 0
-    if verb == "mousehold":  # left button held for N seconds (mining)
+    if verb == "mousehold":  # mousehold <secs> [right] -- button held, cursor NOT moved
         secs = float(args[0])
-        print(with_window(inst, ["[SSK]::mouse_event(2, 0, 0, 0, [UIntPtr]::Zero)", f"Start-Sleep -Milliseconds {int(secs * 1000)}",
-                                 "[SSK]::mouse_event(4, 0, 0, 0, [UIntPtr]::Zero)"]))
+        down, up = (8, 16) if len(args) > 1 and args[1] == "right" else (2, 4)
+        # Deliberately no SetCursorPos: the game grabs the mouse, so moving it would turn the
+        # camera and throw away an aim set by `/tp <player> x y z <yaw> <pitch>`.
+        print(with_window(inst, [f"[SSK]::mouse_event({down}, 0, 0, 0, [UIntPtr]::Zero)", f"Start-Sleep -Milliseconds {int(secs * 1000)}",
+                                 f"[SSK]::mouse_event({up}, 0, 0, 0, [UIntPtr]::Zero)"]))
         return 0
     if verb == "stop":
         print(ps(f"Get-CimInstance Win32_Process -Filter \"Name='javaw.exe' OR Name='java.exe'\" | Where-Object {{ $_.CommandLine -match '{inst_pat(inst)}' }} | "

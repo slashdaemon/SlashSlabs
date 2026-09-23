@@ -28,5 +28,6 @@ __pycache__/
 *.keystore
 *.jks
 
-# Claude Code session state
-.claude/
+# Claude Code session state — except the committed testkit skill
+.claude/*
+!.claude/skills/

@@ -249,16 +249,33 @@ kept in `compat/loot-legacy` (26.1.2, 26.2) and `compat/loot-263` (26.3).
 ## Testing
 
 ```bash
+python scripts/regress.py doctor    # preflight: JDK, ports, stale JVMs, jars, run config
+python scripts/regress.py quick     # unit tests + one band's self-test
+python scripts/regress.py gate      # the release gate: shipped jars on real Fabric servers
+python scripts/regress.py full      # everything unattended; add --client for the client checks
+```
+
+`regress.py` front-ends the individual scripts, which can still be run directly:
+
+```bash
 ./gradlew :versions:26.1.2:test                                     # unit tests
 python scripts/devserver.py --band 26.3 --fresh -c "slashslabs selftest"   # dev server self-test
 python scripts/prodtest.py 26.1.2 26.2 26.3                          # shipped jars on real Fabric servers
 python scripts/determinism.py 8                                      # generation-order independence + cost
+python scripts/clienttest.py                                         # vanilla-client checks (attended)
 ```
+
+Run them by hand and two traps are yours to avoid: `determinism.py` leaves `worldgen=false` in
+`versions/26.1.2/run/config/slashslabs.json`, and the self-test still reports 399/399 with the
+worldgen hook off — so read the `/slashslabs info` line. And `--fresh` silently keeps a world
+Windows has locked. `regress.py` handles both.
 
 `JAVA25_HOME` (or `JAVA_HOME`) must point at a JDK 25. The scripts run servers on
 `127.0.0.1` with RCON for automation; they're for local testing, not production.
 [`docs/TESTING.md`](docs/TESTING.md) records what was tested, including vanilla-client movement,
-mining and placement checks, and what still needs a person.
+mining and placement checks, and what still needs a person. The ordering rules, the change→tier
+mapping and how to read a failure are in
+[`.claude/skills/slashslabs-testkit/SKILL.md`](.claude/skills/slashslabs-testkit/SKILL.md).
 
 ## Project layout
 
