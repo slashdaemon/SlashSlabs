@@ -62,6 +62,24 @@ The Voxy client could join the full TBS server only with StreamCraft and the Dun
 set aside. Fabric API's registry sync refuses a Fabric client that lacks those two mods' entries.
 That's a TBS client-pack matter, unrelated to SlashSlabs, whose Polymer entries are hidden.
 
+### Spike — sculk-backed bottom slabs (`sculkBottom`, branch `spike/sculk-bottom`, 2026-09-23)
+
+`sculkBottom=true` + `sandSlab=true`: dirt, sand and three grass tints all textured, bottoms on
+`sculk_sensor` states (144/150 left), tops on the four copper slots (grass tint 2 borrows tint 0's
+top). Self-test **420/420** on 26.1.2, 26.2 and 26.3 with the flag on and off (the count rose from
+399 by 20 outline-shape checks and one backing check). Manual, stock 26.1.2 client, by the owner:
+
+| Check | Result |
+|---|---|
+| Textures, bottom and top of every material, in a dark room | Correct; no sculk or copper visible |
+| Light-level-1 glow after placing/breaking in view (R17) | Present but so faint it is hard to see |
+| Real sculk sensor and calibrated sensor (note block → dust → lamp) | Look and work normally |
+| Redstone dust between sculk-backed slabs | Looks normal |
+| Waterlogged bottom slabs (grass, dirt, sand) and a waterlogged top | Correct |
+| Test field: walking, at night | Looks good |
+| Desert terrain | Sand rises get real sand slabs, no smooth sandstone; sand slabs sound like sand |
+| Badlands terrain | Red sand rises get smooth red sandstone slabs, which look acceptable; terracotta rises stay full-block steps (no vanilla slab, no custom material yet) |
+
 ### M3 — determinism and cost (`determinism.py`, 17×17 chunks at 4000,4000)
 
 Same area generated in row order, reverse order and shuffled, each in a fresh world:
