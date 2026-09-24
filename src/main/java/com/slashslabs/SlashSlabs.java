@@ -41,12 +41,12 @@ public final class SlashSlabs implements ModInitializer {
         TerrainSmoother.configure(CONFIG);
         PackGenerator.register();
 
-        // Footsteps, falls and mining hits come from the client's copper backing state; the sound
-        // patcher blanks copper's sounds in the pack and replays each block's real SoundType
-        // from the server (RESEARCH C5). Real copper blocks become server-played too.
+        // Footsteps, falls and mining hits come from the client's backing state (sculk sensor for
+        // bottoms, copper for tops); the sound patcher blanks those sounds in the pack and replays
+        // each block's real SoundType from the server (RESEARCH C5, §2.6). Real copper blocks and
+        // sculk sensors become server-played too.
         SoundPatcher.convertIntoServerSound(SoundType.COPPER);
-        // Both sculk sensors use SCULK_SENSOR; real sensors become server-played the same way.
-        if (CONFIG.sculkBottom) SoundPatcher.convertIntoServerSound(SoundType.SCULK_SENSOR);
+        SoundPatcher.convertIntoServerSound(SoundType.SCULK_SENSOR);
 
         ServerLifecycleEvents.SERVER_STARTING.register(server -> GrassColors.ensureLoaded());
         CommandRegistrationCallback.EVENT.register(SlabsCommand::register);

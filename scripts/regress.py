@@ -43,7 +43,7 @@ CONFIG_DEFAULTS = {
     "worldgen": True, "hookStage": "light", "diagonals": False,
     "dimensions": ["minecraft:overworld"], "excludeBiomes": [], "structureGuard": True,
     "maxWaterDepth": 1, "snowLayers": 5,
-    "grassPalette": ["#79C05A", "#88BB67", "#86B783"], "sandSlab": False,
+    "grassPalette": ["#79C05A", "#88BB67", "#86B783"],
     "materialOverrides": {}, "stepHeight": False, "stepHeightOffWhileSneaking": True,
     "animalSpawnsOnGrassSlabs": False,
 }

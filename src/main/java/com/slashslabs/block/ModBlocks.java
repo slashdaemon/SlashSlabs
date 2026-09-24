@@ -87,27 +87,27 @@ public final class ModBlocks {
     }
 
     /**
-     * Claims Polymer slab slots. The order is fixed (dirt, sand, grass tints) so a material's
-     * backing state does not move between restarts; only grass entries shift when the palette
-     * size changes. A pool that runs dry leaves the material on a vanilla lookalike slab.
+     * Claims Polymer states. Bottoms come from the sculk-sensor pools (150 each), tops from the
+     * four copper slab slots (RESEARCH §2.6). The order is fixed and append-only (dirt, sand,
+     * grass tints) so a material's backing state does not move between restarts. A pool that
+     * runs dry leaves the material on a vanilla lookalike slab.
      * Returns the {grass, dirt, sand} backing tables.
      */
     private static BlockState[][][][] requestBacking() {
-        BlockState[][] dirt = request("dirt_slab", Blocks.MUD_BRICK_SLAB, fallback(Blocks.MUD_BRICK_SLAB)[1]);
+        BlockState[][] dirt = request("dirt_slab", Blocks.MUD_BRICK_SLAB, true, fallback(Blocks.MUD_BRICK_SLAB)[1]);
         dirtTextured = dirt != null;
         BlockState[][][] dirtTable = {dirt != null ? dirt : fallback(Blocks.MUD_BRICK_SLAB)};
 
-        BlockState[][] sand = SlashSlabs.CONFIG.sandSlab
-                ? request("sand_slab", Blocks.SMOOTH_SANDSTONE_SLAB, fallback(Blocks.SMOOTH_SANDSTONE_SLAB)[1]) : null;
+        BlockState[][] sand = request("sand_slab", Blocks.SMOOTH_SANDSTONE_SLAB, true, fallback(Blocks.SMOOTH_SANDSTONE_SLAB)[1]);
         sandTextured = sand != null;
         BlockState[][][] sandTable = {sand != null ? sand : fallback(Blocks.SMOOTH_SANDSTONE_SLAB)};
 
         int tints = SlashSlabs.PALETTE.length;
         List<BlockState[][]> grass = new ArrayList<>();
         for (int t = 0; t < tints; t++) {
-            // A tint without a top slot borrows tint 0's top (or dirt's, if tint 0 has none).
+            // Only tint 0 takes a copper top; the other tints share it (tops are player-placed).
             BlockState[] topFallback = grass.isEmpty() ? dirtTable[0][1] : grass.get(0)[1];
-            BlockState[][] g = request("grass_slab_t" + t, null, topFallback);
+            BlockState[][] g = request("grass_slab_t" + t, null, t == 0, topFallback);
             if (g == null) break;
             grass.add(g);
         }
@@ -122,34 +122,11 @@ public final class ModBlocks {
     }
 
     /**
-     * One slot in each of the four slab pools, or null (nothing claimed) if any pool is full.
-     * With sculkBottom the bottom states come from the sculk-sensor pools instead, and a full
-     * copper top pool leaves this material's top on {@code topFallback} rather than failing it.
+     * A sculk-sensor state for the bottom (dry and waterlogged), or null (nothing claimed) if the
+     * pools are full. {@code wantsTop}: also claim a copper top slot; without one, or when the
+     * copper pools are full, the top shows {@code topFallback}.
      */
-    private static BlockState[][] request(String model, Block fallbackForLog, BlockState[] topFallback) {
-        if (SlashSlabs.CONFIG.sculkBottom) return requestSculk(model, fallbackForLog, topFallback);
-        for (boolean top : new boolean[]{false, true}) {
-            for (boolean wl : new boolean[]{false, true}) {
-                if (PolymerBlockResourceUtils.getBlocksLeft(BlockModelType.getSlab(!top, wl)) <= 0) {
-                    SlashSlabs.LOGGER.warn("No free Polymer slab slot for {}{}", model,
-                            fallbackForLog == null ? "; it is disabled" : "; it falls back to " + BuiltInRegistries.BLOCK.getKey(fallbackForLog));
-                    SLOT_REPORT.add(model + ": no slot");
-                    return null;
-                }
-            }
-        }
-        BlockState[][] out = new BlockState[2][2];
-        for (int top = 0; top < 2; top++) {
-            for (int wl = 0; wl < 2; wl++) {
-                PolymerBlockModel m = PolymerBlockModel.of(SlashSlabs.id("block/" + model + (top == 1 ? "_top" : "_bottom")));
-                out[top][wl] = PolymerBlockResourceUtils.requestBlock(BlockModelType.getSlab(top == 0, wl == 1), m);
-            }
-        }
-        SLOT_REPORT.add(model + " -> " + BuiltInRegistries.BLOCK.getKey(out[0][0].getBlock()));
-        return out;
-    }
-
-    private static BlockState[][] requestSculk(String model, Block fallbackForLog, BlockState[] topFallback) {
+    private static BlockState[][] request(String model, Block fallbackForLog, boolean wantsTop, BlockState[] topFallback) {
         if (PolymerBlockResourceUtils.getBlocksLeft(BlockModelType.SCULK_SENSOR) <= 0
                 || PolymerBlockResourceUtils.getBlocksLeft(BlockModelType.SCULK_SENSOR_WATERLOGGED) <= 0) {
             SlashSlabs.LOGGER.warn("No free Polymer sculk slot for {}{}", model,
@@ -161,7 +138,7 @@ public final class ModBlocks {
         PolymerBlockModel bottom = PolymerBlockModel.of(SlashSlabs.id("block/" + model + "_bottom"));
         out[0][0] = PolymerBlockResourceUtils.requestBlock(BlockModelType.SCULK_SENSOR, bottom);
         out[0][1] = PolymerBlockResourceUtils.requestBlock(BlockModelType.SCULK_SENSOR_WATERLOGGED, bottom);
-        boolean topSlot = PolymerBlockResourceUtils.getBlocksLeft(BlockModelType.SLAB_TOP) > 0
+        boolean topSlot = wantsTop && PolymerBlockResourceUtils.getBlocksLeft(BlockModelType.SLAB_TOP) > 0
                 && PolymerBlockResourceUtils.getBlocksLeft(BlockModelType.SLAB_TOP_WATERLOGGED) > 0;
         if (topSlot) {
             PolymerBlockModel top = PolymerBlockModel.of(SlashSlabs.id("block/" + model + "_top"));
@@ -171,7 +148,7 @@ public final class ModBlocks {
             out[1] = topFallback.clone();
         }
         SLOT_REPORT.add(model + " -> " + BuiltInRegistries.BLOCK.getKey(out[0][0].getBlock()) + " / top "
-                + BuiltInRegistries.BLOCK.getKey(out[1][0].getBlock()) + (topSlot ? "" : " (fallback)"));
+                + BuiltInRegistries.BLOCK.getKey(out[1][0].getBlock()) + (topSlot ? "" : " (shared)"));
         return out;
     }
 

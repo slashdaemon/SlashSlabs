@@ -150,7 +150,7 @@ public final class SelfTest {
     }
 
     // ---- Polymer backing: every state maps to a client state of exactly the same shape
-    //      (a slab, or with sculkBottom an inactive sculk sensor for bottom slabs)
+    //      (a copper slab for tops, an inactive sculk sensor for bottoms)
 
     private void checkBacking(ServerLevel level, BlockPos pos) {
         for (Block b : new Block[]{ModBlocks.GRASS_SLAB, ModBlocks.DIRT_SLAB, ModBlocks.SAND_SLAB}) {
@@ -183,8 +183,8 @@ public final class SelfTest {
             BlockState top = ModBlocks.DIRT_SLAB.defaultBlockState().setValue(SlabBlock.TYPE, SlabType.TOP);
             check(ModBlocks.DIRT_SLAB.getPolymerBlockState(top, null).getBlock().builtInRegistryHolder()
                     .key().identifier().getPath().contains("copper"), "dirt top slab backed by a waxed copper slab state");
-            check(ModBlocks.DIRT_SLAB.getPolymerBlockState(ModBlocks.DIRT_SLAB.defaultBlockState(), null).getBlock() instanceof SculkSensorBlock
-                    == SlashSlabs.CONFIG.sculkBottom, "dirt bottom slab backed by " + (SlashSlabs.CONFIG.sculkBottom ? "a sculk sensor" : "copper"));
+            check(ModBlocks.DIRT_SLAB.getPolymerBlockState(ModBlocks.DIRT_SLAB.defaultBlockState(), null).getBlock() instanceof SculkSensorBlock,
+                    "dirt bottom slab backed by a sculk sensor");
         }
         check(ModBlocks.GRASS_SLAB.getPolymerBreakEventBlockState(ModBlocks.GRASS_SLAB.defaultBlockState(), null).is(Blocks.GRASS_BLOCK),
                 "grass slab break particles/sound come from grass_block");

@@ -39,19 +39,11 @@ public final class SlabsConfig {
     public int snowLayers = 5;
 
     /**
-     * Grass slab palette, one Polymer slot each (max 3). Each generated or placed grass slab takes
+     * Grass slab palette (max 3). Each generated or placed grass slab takes
      * the entry nearest to the biome's grass colour. Default fitted by the M2 survey (forest, birch
      * forest, taiga greens; docs/SURVEY.md): mean CIE76 error 4.7 over 67k rise-edge samples.
      */
     public List<String> grassPalette = new ArrayList<>(List.of("#79C05A", "#88BB67", "#86B783"));
-    /** Spend a slot on a real sand slab. Otherwise sand falls back to smooth sandstone slabs. */
-    public boolean sandSlab = false;
-    /**
-     * SPIKE: back every material's bottom slab with Polymer's sculk-sensor pools (RESEARCH §2.6)
-     * instead of the copper slab pools. Top slabs keep copper; a material whose top finds no
-     * copper slot shows a vanilla lookalike top. Changes backing states, so Voxy LODs rebuild.
-     */
-    public boolean sculkBottom = false;
 
     /**
      * Per-surface-block overrides of the material map, e.g. {"minecraft:gravel": "minecraft:andesite_slab"}
@@ -89,9 +81,9 @@ public final class SlabsConfig {
 
     private void sanitize() {
         if (grassPalette == null || grassPalette.isEmpty()) grassPalette = new ArrayList<>(List.of("#91BD59"));
-        int maxGrass = sandSlab && !sculkBottom ? 2 : 3;
+        int maxGrass = 3;
         if (grassPalette.size() > maxGrass) {
-            SlashSlabs.LOGGER.warn("grassPalette has {} entries but only {} slots are free; using the first {}",
+            SlashSlabs.LOGGER.warn("grassPalette has {} entries but at most {} are supported; using the first {}",
                     grassPalette.size(), maxGrass, maxGrass);
             grassPalette = new ArrayList<>(grassPalette.subList(0, maxGrass));
         }
