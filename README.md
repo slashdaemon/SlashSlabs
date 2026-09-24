@@ -322,7 +322,9 @@ natural ground and skips any column with player blocks on it.
 
 ## Licence
 
-Copyright © The Block Academy LLC. All rights reserved (see [`LICENSE`](LICENSE)). The bundled
-Polymer libraries are LGPL-3.0; see [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md).
+Copyright © 2026 The Block Academy LLC. Licensed under
+[Creative Commons Attribution 4.0 International](https://creativecommons.org/licenses/by/4.0/)
+(CC BY 4.0, see [`LICENSE`](LICENSE)) from 0.2.1 on. The bundled Polymer libraries are LGPL-3.0;
+see [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md).
 
 Not an official Minecraft product. Not approved by or associated with Mojang or Microsoft.

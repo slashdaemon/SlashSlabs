@@ -314,6 +314,7 @@ Depends on: M5, TBS on MC 26.2+ (Geyser 2.11.x).
 - **D3 — Footstep sounds:** accept, or remap copper step sounds globally (after M0 listening test).
 - **D4 — Step-height module on TBS:** on, off, or on-except-sneaking.
 - **D5 — Public release license** (SlashRails uses CC-BY-4.0; a closed license is also possible).
+  **Decided: CC BY 4.0**, from 0.2.1 (the first store release).
 - **D6 — Mob spawning on grass slabs:** vanilla (none) vs allow animals.
 
 ---

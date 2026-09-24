@@ -10,7 +10,7 @@
     "sources": "https://github.com/slashdaemon/SlashSlabs",
     "issues": "https://github.com/slashdaemon/SlashSlabs/issues"
   },
-  "license": "All-Rights-Reserved",
+  "license": "CC-BY-4.0",
   "icon": "assets/slashslabs/icon.png",
   "environment": "*",
   "entrypoints": {

@@ -65,5 +65,6 @@ python scripts/prodtest.py                  # release gate: shipped jars on real
   chunks (26.2+ logs "unsafe terrain read" otherwise).
 - Loot tables are the only data that differs on 26.3; a 26.1-format table loads there with its
   conditions silently dropped.
-- Licence is undecided (D5): `LICENSE` is all-rights-reserved; Polymer's LGPL notice is in
+- Licence (D5, decided): CC BY 4.0 from 0.2.1 (`LICENSE`, `fabric.mod.json`, both store pages);
+  0.1.0 and 0.2.0 shipped all-rights-reserved. Polymer's LGPL notice is in
   `THIRD_PARTY_NOTICES.md` and shipped in the jar.

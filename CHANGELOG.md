@@ -3,6 +3,18 @@
 All notable changes to SlashSlabs. Versions follow `MAJOR.MINOR.PATCH`; each release ships one
 jar per Minecraft line (`slashslabs-<version>+mc<mc>-fabric.jar`).
 
+## 0.2.1
+
+For Minecraft **26.1.2, 26.2 and 26.3**. The first release on CurseForge and Modrinth. Everything
+in 0.2.0 below applies.
+
+### Changed
+
+- **Licence: SlashSlabs is now [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)**
+  (Creative Commons Attribution 4.0 International). Earlier releases were all rights reserved.
+  The bundled Polymer libraries stay LGPL-3.0.
+- No code changes from 0.2.0.
+
 ## 0.2.0
 
 For Minecraft **26.1.2, 26.2 and 26.3**, as before.
