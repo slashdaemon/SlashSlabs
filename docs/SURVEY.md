@@ -38,8 +38,32 @@ What smoothing places, after the guards (water depth, plants, structures, snowy 
 
 The four slots go to **dirt + three grass tints**. Grass carries two thirds of all placements,
 so extra greens buy the most visual quality. Dirt covers the dirt family (12%), for which vanilla
-has no lookalike slab. Sand (4.4%) reads well enough as smooth sandstone, so a real sand slab
-stays optional (`sandSlab: true` trades one grass tint for it).
+has no lookalike slab. Sand (4.4%) stays optional (`sandSlab: true` trades one grass tint for it).
+
+> **Correction (M0 manual testing, 2026-09-22).** This section used to say sand "reads well
+> enough as smooth sandstone". That judgement was made on colour alone and is wrong on two
+> counts. Smooth sandstone is flat and pale where sand is granular; and, worse, the fallback is
+> a *genuine vanilla block*, so `polymer-sound-patcher` never touches it and sand rises break
+> and step like **stone** (`SoundType.STONE` by default, versus `SoundType.SAND` — verified in
+> `Blocks.<clinit>`, see `RESEARCH.md` §2.4). Red sand has the identical defect.
+>
+> Neither is fixable by choosing a different vanilla slab: no vanilla slab carries a sand sound.
+> The options are to spend a slot (`sandSlab: true`, costing a grass tint) or to stop smoothing
+> sand (`materialOverrides` → `"none"`, costing 4.4% + 3.3% of placements and nothing else).
+> Terracotta is a third case with no way out at all — vanilla has no terracotta slab in any
+> colour, so badlands cannot be smoothed within the four-slot budget. See `RESEARCH.md` §4.12.
+>
+> The measured colour cost of dropping to two tints is **not yet established**. The global fit
+> in the table below is k=3; a k=2 refit needs a sample with many grass columns spanning many
+> biomes. Two attempts on 2026-09-22 were invalid — a per-biome sweep sampled inside single
+> biomes, where every k fits at ΔE 0 by construction, and a 1,681-chunk sweep landed in a region
+> with 92,050 dirt rises and 1,152 grass ones. The one usable sample (289 chunks, 342 grass
+> columns) gave k=2 **3.2** against k=3 **1.7**, which is too thin to trade a tint on.
+>
+> **Update (2026-09-23).** The trade-off above assumed four materials in total. That holds for
+> top slabs only: bottom slabs — everything smoothing places — can use Polymer's sculk-sensor
+> pools, 150 states each (`RESEARCH.md` §2.6, C16). Sand, red sand and terracotta then get real
+> slabs without giving up a grass tint, and the k=2 refit stops mattering.
 
 ## Grass palette
 

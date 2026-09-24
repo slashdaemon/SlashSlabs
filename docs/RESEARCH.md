@@ -29,6 +29,7 @@ Confidence: **H** read in source / official metadata · **M** inferred from sour
 | C13 | Separate BlueMap pack in `config/bluemap/packs/` | Probably unnecessary: BlueMap scans mod jars (`scan-for-mod-resources: true`). Ship real `assets/slashslabs/...` in the jar plus `blockColors.json` → `@grass` for true per-biome tint on the map. Keep a `packs/` zip only as a fallback. | M |
 | C14 | M8 Bedrock depends on TBS 26.2+ | Geyser-Fabric only tracks the newest Java version. The last 26.1.2 build (2.10.1-b1184) is what TBS runs. Current Geyser (2.11.3) is 26.2 only, and there is **no Geyser-Fabric for 26.3 yet**. TBS on 26.1.2 is a dead end for new Bedrock clients regardless of SlashSlabs, which feeds decision D1. | H |
 | C15 | Voxy verified in M0 (visual only) | New risk **R11**: the Voxy World Gen V2 server mod (in the TBS pack) serializes chunk sections outside Polymer's per-player packet context. Its large-palette path (> 256 distinct states in a section) would send raw server IDs (§6.2). | M |
+| C16 | "Four custom materials maximum" is the defining constraint | **Only for top slabs.** Polymer has a second bottom-slab-shaped pool, `SCULK_SENSOR` (+ `_WATERLOGGED`), of 150 states each, so bottom slabs — everything worldgen places — are not slot-limited. Top slabs stay at four. §2.6 | H |
 
 ---
 
@@ -113,6 +114,31 @@ default boolean overridePlayerCollisionsWithPolymer(BlockGetter, BlockPos, Block
 - Collision and outline: Polymer forces the server-side shape of a Polymer block to the client
   state's shape, so server and client agree exactly (R1 is structurally closed). (H)
 - `/polymer blocks_module_state_report` prints the slots left. Use it in M0. (H)
+- **The four-slot ceiling of the copper pools is the same on every band, and no Polymer release
+  lifts it.** It binds top slabs only; bottom slabs have the sculk-sensor pool (§2.6). Measured
+  2026-09-22 by booting each band's shipped server and reading the report:
+
+  | Band | Polymer | `SLAB_BOTTOM` / `SLAB_TOP` (+ waterlogged) |
+  |---|---|---|
+  | 26.1.2 | 0.16.5 | cap **5** |
+  | 26.2 | 0.17.5 | cap **5** |
+  | 26.3 | 0.18.2 | cap **5** |
+
+  The pool is built at runtime from the live registry, so there are no block ids to read
+  statically — only a running server answers this. Four usable (C1), and SlashSlabs takes all
+  four as dirt + three grass tints. (H)
+- **A substitute pool must have exactly the slab's shape.** Of the 189 pools in the report, the
+  four `SLAB_*` are the only ones SlashSlabs exhausts: `FULL_BLOCK` has 1555/1556 free,
+  `TRAPDOOR_BOTTOM` 83/84, each of the 96 `STAIRS_*` 3/4. Those are unusable, and not for a
+  rendering reason — `overridePlayerCollisionsWithPolymer` makes the block's effective shape
+  *be* the backing state's shape, so a trapdoor backing yields a real 3-pixel lip and a
+  `FULL_BLOCK` backing a real full cube. The pack can retexture a state; it cannot reshape it.
+  `SelfTest` pins the invariant: the backing must be a `SlabBlock` with matching `TYPE` /
+  `WATERLOGGED` and byte-identical collision AABBs. **Correction (2026-09-23):** this bullet
+  used to conclude that four materials is a hard ceiling for the whole matrix. It missed the
+  `SCULK_SENSOR` pools, whose states have exactly the bottom-slab shape; `SelfTest`'s
+  `SlabBlock` check is a design choice, not the invariant. The ceiling holds for top slabs
+  only. §2.6. (H)
 
 ### 2.2 Mining (R2)
 
@@ -133,7 +159,29 @@ ping, and no ghost blocks. Bedrock via Geyser may drift (Geyser PR #4557). (H / 
 - The item icon *can* be tinted (`"tints":[{"type":"minecraft:constant","value":…}]` or
   `minecraft:grass` with temperature/downfall). The block cannot. (H)
 - Creative tab: `PolymerCreativeModeTabUtils.registerPolymerCreativeModeTab(Identifier, tab)`;
-  vanilla clients open it with `/polymer creative`. (H)
+  vanilla clients open it with `/polymer creative`. A vanilla client builds its own creative
+  menu from registries it owns, so a server-registered tab can never appear there — the Polymer
+  command is the only route, and `/give slashslabs:<id>` the other. (H)
+- **Middle-click pick-block already returns the real item; nothing to implement.** Since 1.21.4
+  pick-block is server-authoritative, and the client resolves nothing locally:
+
+  ```
+  client  Minecraft.pickBlock -> MultiPlayerGameMode.handlePickItemFromBlock(BlockPos, boolean)
+          new ServerboundPickItemFromBlockPacket(pos, includeData); send()   <- whole method body
+  server  ServerGamePacketListenerImpl.handlePickItemFromBlock
+          packet.pos() -> isWithinBlockInteractionRange -> level.isLoaded
+          -> ServerLevel.getBlockState(pos)          <- the real slashslabs:* block
+          -> BlockState.getCloneItemStack(level, pos, includeData) -> tryPickItem(stack)
+  ```
+
+  The packet carries a position, not a block, so the disguise is irrelevant: the server looks up
+  what is really there. We override no `getCloneItemStack`, and `PolymerBlockItem` is registered
+  as each block's item, so the vanilla default returns `slashslabs:<id>`. Polymer is not involved
+  — `FallbackServerPacketHandler.handlePickItemFromBlock` disassembles to a bare `return`, but it
+  is a fallback listener off this path, and Polymer's only `getCloneItemStack` references are
+  client-side Jade/WTHIT compat. (H, read from `javap` of the 26.1.2 jars and Polymer 0.16.5;
+  **in-game confirmation still outstanding** — place a grass slab, middle-click, expect
+  "Grass Slab" rather than a copper slab.)
 - 26.2 deprecates one `PolymerItemUtils.getRealItemStack` overload. Avoid it. (H)
 
 ### 2.4 Sounds
@@ -146,6 +194,33 @@ ping, and no ghost blocks. Bedrock via Geyser may drift (Geyser PR #4557). (H / 
 
 The sound patcher's global config is `config/polymer/sound-patch.json` (`force_disable`,
 `always_handle_vanilla_block_sounds`). Precedent: `craftycorvid/wool-polymer`. (H)
+
+**The patcher only reaches Polymer blocks, so a vanilla lookalike keeps the vanilla sound.**
+This is the hidden cost of every `vanilla(...)` entry in `MaterialMap`: the block placed really
+is that vanilla block, so no rewriting happens and the player hears whatever it actually is.
+Read out of `Blocks.<clinit>` — an explicit `.sound()` three lines before the field store —
+with `SoundType.STONE` confirmed as the `BlockBehaviour.Properties` default, which is why the
+stone family never calls `.sound()` at all:
+
+| Terrain block | Its sound | Fallback slab | Slab's sound | |
+|---|---|---|---|---|
+| `SAND` | `SAND` | `SMOOTH_SANDSTONE_SLAB` | `STONE` (default) | **mismatch** |
+| `RED_SAND` | `SAND` | `SMOOTH_RED_SANDSTONE_SLAB` | `STONE` (default) | **mismatch** |
+| `MUD` | `MUD` | `MUD_BRICK_SLAB` | `MUD_BRICKS` | mild — both mud-family |
+| `GRASS_BLOCK` | `GRASS` | *custom* `GRASS_SLAB` | `GRASS` | matches |
+| `DIRT` | `GRAVEL` | *custom* `DIRT_SLAB` | `GRAVEL` | matches |
+| `STONE` etc. | `STONE` | `STONE_SLAB` etc. | `STONE` | matches |
+| `SNOW_BLOCK` | `SNOW` | `SNOW` layers | `SNOW` | matches |
+
+So sand and red sand were breaking and stepping like stone in every desert and on every beach.
+Found by ear during M0 manual testing, 2026-09-22 — no automated tier covers sound, and the
+self-test cannot: it compares backing states and collision, never `SoundType`. Fixed by mapping
+both to `none` (see below) rather than by spending a slot. A custom sand slab *would* sound
+right (`ModBlocks` builds `SAND_SLAB` with `.sound(SoundType.SAND)` and the patcher then applies,
+because it would be copper-backed) — but only with `sandSlab: true`, which costs a grass tint.
+With `sandSlab: false` even `/give slashslabs:sand_slab` sounds wrong, because the fallback
+backing is a genuine sandstone state the patcher never touches. (H) With the sculk pools
+(§2.6) a sand bottom slab no longer costs a grass tint, which makes this the preferred fix.
 
 ### 2.5 Resource pack and AutoHost
 
@@ -173,6 +248,84 @@ The sound patcher's global config is `config/polymer/sound-patch.json` (`force_d
     (a separate port; issue #277, its thread pool can wedge) or `polymer:external`.
 - Declining a required pack disconnects the player. A server-list entry set to "Disabled"
   auto-declines. Geyser auto-accepts for Bedrock players, so they are not kicked. (H)
+
+### 2.6 Beyond four materials (C16)
+
+Researched 2026-09-23 against Polymer 0.16.5 / 0.17.5 / 0.18.2 and the 26.1.2 / 26.2 / 26.3
+jars, by booting each band's server and comparing every registered block state's collision and
+outline shape to both slab boxes. Nothing was built from it yet.
+
+**Which states have a slab's shape (H, full registry, identical on all three bands):**
+
+| Shape | States with collision *and* outline equal to it |
+|---|---|
+| Bottom slab `(0,0,0)–(16,8,16)` | slabs; all 96 `sculk_sensor` states; all 384 `calibrated_sculk_sensor` states |
+| Top slab `(0,8,0)–(16,16,16)` | slabs only |
+
+Near misses: `sculk_shrieker` (collision a bottom slab, outline a full cube); `snow` layers=5
+(collision 8, outline 10) and layers=4 (outline 8, collision 6); `daylight_detector` 6 px,
+`soul_campfire` 7, `stonecutter` 9.
+
+**Polymer already pools them.** `BlockModelType` has `SCULK_SENSOR`, `SCULK_SENSOR_WATERLOGGED`,
+`SCULK_SENSOR_ACTIVE` and `SCULK_SENSOR_ACTIVE_WATERLOGGED` (`getSculkSensor(active, wl)`).
+`SCULK_SENSOR` holds 150 states — both sensors, phase `inactive` or `cooldown`, `power` 1–15, the
+calibrated one in all four facings — and the waterlogged pool the same 150. Real sensors never
+sit at those states visually: `SPECIAL_REMAPS` has 450 entries sending power N to power 0,
+switched on the first time a state of that block is requested, the same mechanism as waxed →
+unwaxed copper. The client's blockstate JSONs key only on `sculk_sensor_phase` (and `facing`),
+so `power` is invisible and the pack may retexture every spare. Precedent:
+`DrexHD/polymer-patch-bundle`'s `SlabPolymerBlock` backs its bottom slabs on this pool. (H)
+
+**Behaviour of a sculk-backed slab on a vanilla client:**
+
+| Aspect | Result | Conf. |
+|---|---|---|
+| Occlusion, face culling, AO | Same as a slab: `canOcclude`, bottom-half occlusion shape, `useShapeForLightOcclusion`; no `skipRendering` / `getShadeBrightness` override | H |
+| Client-predicted movement | Same: friction 0.6, speed/jump 1.0, base `fallOn`; `stepOn` runs server-side only | H |
+| Particles | None: `animateTick` returns unless phase is `ACTIVE`, and `SCULK_SENSOR` holds no active states. Never use the `_ACTIVE` pools | H |
+| Light | **Mismatch.** Every sensor state emits light 1 on the client; the server block emits 0. Chunks that load show the server's light, but a slab placed, spread or decayed in view is relit client-side and glows faintly. Visible only in near-darkness. Don't give the real block light 1 to match — hostile mobs would stop spawning on smoothed terrain | H / M |
+| Step / hit / fall sounds | Sculk-sensor sounds unless `SoundPatcher.convertIntoServerSound(SoundType.SCULK_SENSOR)` (as Filament does); real sensors then also become server-played, like copper (§2.4) | H |
+| Mining | Server-side (§2.2), so the client's hardness is irrelevant | H |
+| Block entity | The client creates an idle `SculkSensorBlockEntity` (null client ticker, no renderer, no data from the server) | M |
+| Redstone dust beside it | May flash a connection (the sensor is a signal source) until the server's update arrives | M |
+| No pack / Bedrock via Geyser | Shows sculk sensors instead of copper | H / U |
+
+**Resulting layout (recommended):** every material's bottom slab (dry + waterlogged) on the
+sculk pools; the four copper slots only for the top slabs of the materials most likely to be
+placed upside-down by players. A player-placed top slab of any other material falls back to a
+vanilla lookalike or is refused. Worldgen places bottom slabs only, so smoothing coverage is
+limited by textures and palette, not slots: real sand and red sand slabs (§2.4, §4.12),
+terracotta, more grass tints, Nether/End materials. `SelfTest`'s `SlabBlock` check becomes
+"collision and outline AABBs identical". Moving a material to a new backing invalidates
+clients' Voxy LODs once (§2.1).
+
+**TBS (checked 2026-09-23, TBS-Server 1.5.0, the modset `prodtest.py tbs` runs):** SlashSlabs is
+the only mod that nests or references Polymer (`eu/pb4/polymer` appears in no other jar or
+`fabric.mod.json`), so neither the sculk nor the copper pools are shared and nothing on TBS calls
+`requestEmpty`. A Polymer mod added later would draw from the same pools in mod-init order.
+
+**Routes that don't work or aren't worth it:**
+
+- **Biome-tinted grass from one slot — impossible on vanilla clients (H).** Block tints are
+  registered in Java (`BlockColors.createDefault`); `tintindex` only indexes that list, and 26.1–26.3
+  add no pack-side block tint. Every biome-tinted block has the wrong shape. Blockstates select by
+  property and position-seeded random weight only; nothing carries biome or material data.
+- **Core shaders (H/M).** `terrain.vsh/fsh` are still pack-overridable (26.3 needs a rewritten set:
+  ShaderC, `#include`), but the shader has no biome input and Sodium/Iris/Voxy ignore it.
+- **Display entities (H/M).** One shared collision state plus an `item_display` per slab removes
+  the limit and even allows exact per-column tint (`custom_model_data` tint source), but at ~51
+  slabs per chunk that is ~25k entities per player at view distance 12, rendered only within ~64
+  blocks, with flat lighting and nothing in Voxy LODs. Every shipped precedent (PolyFactory,
+  Oraxen, Nova, ItemsAdder) keeps display-entity blocks sparse. A hybrid for rare materials only
+  still fails in large deserts/badlands (~43 per chunk) and doesn't fix sounds.
+- **Sacrificing vanilla slabs (H).** An operator-chosen vanilla slab can be remapped to a lookalike
+  (via `BlockExtBlockMapper.INSTANCE.stateMap` or a `BlockMapper.DEFAULT_MAPPER_EVENT` listener)
+  and its states added to the pool (reflection into `PolymerBlockResourceUtils.CREATOR`, or a
+  mixin — no public API). Near-invisible and in no structure: `quartz_slab` → smooth quartz,
+  `cut_sandstone_slab` → smooth sandstone, `cut_red_sandstone_slab` and `red_sandstone_slab` →
+  smooth red sandstone. Taking petrified oak as well makes nine top-slab materials, but breaks
+  any later mod's `requestEmpty(SLAB_*)` (polymer-patch-bundle, wool-polymer, Filament
+  `virtual`). Only worth it if top slabs ever need more than four materials.
 
 ---
 
@@ -396,12 +549,47 @@ wanted, use `UseBlockCallback` server-side on every band.
 - `fabric-permission-api-v1` (`PermissionPredicates.require(...)`) exists on **26.2/26.3 only**. On
   26.1.2 use lucko's `fabric-permissions-api` (its LuckPerms bridge on 26.x is U) or vanilla levels.
 
+### 4.12 Material coverage and `materialOverrides` (H)
+
+Three materials cannot be served well within the copper pools, for two different reasons (both
+lift for bottom slabs once materials move to the sculk pools, §2.6):
+
+- **Terracotta has no vanilla slab in any colour.** `minecraft:terracotta_slab` and the dyed
+  variants are all "Unknown block type" on 26.1.2. Badlands therefore cannot be smoothed by a
+  fallback at all — only a custom block, i.e. a slot. It is absent from `MaterialMap` and falls
+  through to `Kind.NONE`.
+- **Sand and red sand have a vanilla slab that looks and sounds wrong** (§2.4). Smooth sandstone
+  is flat and pale where sand is granular, and it breaks and steps like stone.
+
+`materialOverrides` handles the second case without spending a slot (`MaterialMap.build`):
+`"none"` → `Kind.NONE`, `"snow"` → `Kind.SNOW`, `"slashslabs:grass_slab"` → `Kind.GRASS`, and any
+other block id → a vanilla or custom slab. `Kind.NONE` makes `TerrainSmoother.decide` return
+null — the column is left alone and counted as `skippedMaterial`. Shipping default for a server
+that dislikes the sandstone stand-in:
+
+```json
+"materialOverrides": { "minecraft:sand": "none", "minecraft:red_sand": "none" }
+```
+
+Cost: sand 4.4% + red sand 3.3% of placements stop being smoothed (`SURVEY.md`); grass, dirt,
+snow and the stone family — about 90% — are unaffected, and all three grass tints are kept.
+
+**Trap: turning a material off strands every slab it already placed.** `WorldOps.purge` selects
+via `MaterialMap.isSmoothingSlab`, which is rebuilt from the *current* config, so the moment sand
+maps to `none` the smooth sandstone slabs already in the world stop being purgeable and no
+in-game command can remove them. Purge **before** changing the override, generously and verified
+to zero — a radius-4 purge left ~180 behind in an M0 run and they were unreachable afterwards.
+The only remaining remedy is vanilla `/fill … replace`, which is blunt and also eats
+player-placed and structure-placed slabs. `MaterialMap.build(CONFIG)` runs once at init
+(`SlashSlabs.java:39`) and there is no reload command, so the change needs a restart, and
+existing terrain needs `purge` then `smooth` to re-apply.
+
 ---
 
 ## 5. Textures, palette and licensing
 
-1. **Budget (C1):** 4 materials. Candidate split: 2 grass palettes + dirt + sand, or 3 grass +
-   dirt with sand falling back. The M2 survey decides.
+1. **Budget (C1, C16):** 4 materials in the copper pools; shipped 0.1.0 as dirt + 3 grass tints.
+   Bottom slabs can move to the sculk pools (§2.6), after which the budget binds top slabs only.
 2. **Palette pick:** compute each grass column's blended colour (§3.5) and pick the nearest palette
    entry (the distance metric is an M2 choice; perceptual Lab distance is the safe default).
 3. **Top-face seam risk (R4):** the slab's *top* is the tinted grass top, so a seam shows wherever
@@ -517,6 +705,8 @@ Lithium and Voxy World Gen.
 | R14 | Custom IDs in synced tags or registries (tags, block transformers) | M0 vanilla join with every tag in place; no transformer entries |
 | R15 | Slab lighting looks darker than neighbouring full blocks | M0 visual (Terrain Slabs #19) |
 | R16 | Village paths and structure-placed dirt paths stay stepped | Out of scope (structure guard); extension §11 |
+| R17 | Sculk-backed slabs glow at light 1 client-side after an in-view block update (§2.6) | Vanilla client in darkness: place, spread and decay next to copper-backed slabs and compare |
+| R18 | Another Polymer mod shares the sculk or copper pools, or calls `requestEmpty` | Mod-list check before adding one to TBS; `/polymer blocks_module_state_report` |
 
 ## 9. M0 test list (only the unverified items)
 
@@ -529,6 +719,9 @@ Lithium and Voxy World Gen.
 - BlueMap: slabs render from jar assets; `blockColors.json` read from jar vs `packs/`.
 - Tint seams across the five biomes; snow layers=5 look and steppability.
 - Step-height attribute on a vanilla client, after respawn and on Bedrock.
+- Sculk-backed bottom slab (§2.6): state report shows the pool, texture, light 1 (R17), step and
+  break sounds with the patcher, redstone dust beside it, a real sculk sensor still looks and
+  works normally, and the no-pack / Geyser view.
 
 ---
 
