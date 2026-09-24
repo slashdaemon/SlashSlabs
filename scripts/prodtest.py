@@ -57,7 +57,11 @@ def prepare(target):
     mods.mkdir(parents=True, exist_ok=True)
     for old in mods.glob("slashslabs-*.jar"):
         old.unlink()
-    jar = next((ROOT / "build" / "release").glob(f"slashslabs-*+mc{mc}-fabric.jar"))
+    # The current version only: build/release/ keeps older releases' jars too.
+    version = re.search(r"mod_version=(\S+)", (ROOT / "gradle.properties").read_text()).group(1)
+    jar = ROOT / "build" / "release" / f"slashslabs-{version}+mc{mc}-fabric.jar"
+    if not jar.exists():
+        sys.exit(f"{jar.name} not found; run ./gradlew buildAll")
     shutil.copy(jar, mods / jar.name)
     loader = LOADER
     if target == "tbs":

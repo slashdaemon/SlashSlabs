@@ -59,22 +59,20 @@ public final class ModBlocks {
         }
     }
 
-    private static Plain terracotta(String id, Block full) {
-        // Vanilla has no terracotta slab, so an unslotted terracotta is not smoothed at all.
-        return new Plain(id, full, Blocks.GRANITE_SLAB, false, false);
+    private static Plain terracotta(String colour) {
+        // Dyed terracotta is looked up by id: 26.2+ replaced the per-colour Blocks fields with a
+        // ColorCollection. Vanilla has no terracotta slab, so an unslotted one is not smoothed.
+        String full = colour.isEmpty() ? "terracotta" : colour + "_terracotta";
+        Block block = BuiltInRegistries.BLOCK.getOptional(Identifier.withDefaultNamespace(full)).orElseThrow();
+        return new Plain(full + "_slab", block, Blocks.GRANITE_SLAB, false, false);
     }
 
     /** Registration and slot order; append only. */
     public static final List<Plain> PLAIN = List.of(
             new Plain("sand_slab", Blocks.SAND, Blocks.SMOOTH_SANDSTONE_SLAB, true, true),
             new Plain("red_sand_slab", Blocks.RED_SAND, Blocks.SMOOTH_RED_SANDSTONE_SLAB, true, true),
-            terracotta("terracotta_slab", Blocks.TERRACOTTA),
-            terracotta("orange_terracotta_slab", Blocks.ORANGE_TERRACOTTA),
-            terracotta("yellow_terracotta_slab", Blocks.YELLOW_TERRACOTTA),
-            terracotta("brown_terracotta_slab", Blocks.BROWN_TERRACOTTA),
-            terracotta("red_terracotta_slab", Blocks.RED_TERRACOTTA),
-            terracotta("white_terracotta_slab", Blocks.WHITE_TERRACOTTA),
-            terracotta("light_gray_terracotta_slab", Blocks.LIGHT_GRAY_TERRACOTTA));
+            terracotta(""), terracotta("orange"), terracotta("yellow"), terracotta("brown"),
+            terracotta("red"), terracotta("white"), terracotta("light_gray"));
 
     public static GrassSlabBlock GRASS_SLAB;
     public static DirtSlabBlock DIRT_SLAB;
