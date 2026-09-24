@@ -25,9 +25,12 @@ import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.SculkSensorBlock;
 import net.minecraft.world.level.block.SlabBlock;
 import net.minecraft.world.level.block.SnowLayerBlock;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
+import net.minecraft.world.level.block.state.properties.SculkSensorPhase;
 import net.minecraft.world.level.block.state.properties.SlabType;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
@@ -146,7 +149,8 @@ public final class SelfTest {
         check(again.placed == 0, "second smooth pass places nothing (placed " + again.placed + ")");
     }
 
-    // ---- Polymer backing: every state maps to a slab state of the same shape
+    // ---- Polymer backing: every state maps to a client state of exactly the same shape
+    //      (a slab, or with sculkBottom an inactive sculk sensor for bottom slabs)
 
     private void checkBacking(ServerLevel level, BlockPos pos) {
         for (Block b : new Block[]{ModBlocks.GRASS_SLAB, ModBlocks.DIRT_SLAB, ModBlocks.SAND_SLAB}) {
@@ -160,18 +164,27 @@ public final class SelfTest {
                     check(!(client.getBlock() instanceof SlabBlock), id + ": double maps to a full block");
                     continue;
                 }
-                check(client.getBlock() instanceof SlabBlock
-                                && client.getValue(SlabBlock.TYPE) == s.getValue(SlabBlock.TYPE)
-                                && client.getValue(SlabBlock.WATERLOGGED) == s.getValue(SlabBlock.WATERLOGGED),
-                        id + ": backing " + client + " has the same slab type and waterlogging");
+                boolean wl = s.getValue(SlabBlock.WATERLOGGED);
+                boolean kind = client.getBlock() instanceof SlabBlock
+                        ? client.getValue(SlabBlock.TYPE) == s.getValue(SlabBlock.TYPE)
+                        : client.getBlock() instanceof SculkSensorBlock && s.getValue(SlabBlock.TYPE) == SlabType.BOTTOM
+                                && client.getValue(SculkSensorBlock.PHASE) != SculkSensorPhase.ACTIVE;
+                check(kind && client.getValue(BlockStateProperties.WATERLOGGED) == wl,
+                        id + ": backing " + client + " is a slab of the same type (or an inactive sculk sensor for a bottom) with the same waterlogging");
                 check(client.getCollisionShape(level, pos, CollisionContext.empty()).toAabbs()
                                 .equals(s.getCollisionShape(level, pos, CollisionContext.empty()).toAabbs()),
                         id + ": client collision equals server collision");
+                check(client.getShape(level, pos, CollisionContext.empty()).toAabbs()
+                                .equals(s.getShape(level, pos, CollisionContext.empty()).toAabbs()),
+                        id + ": client outline equals server outline");
             }
         }
         if (ModBlocks.dirtTextured) {
-            check(ModBlocks.DIRT_SLAB.getPolymerBlockState(ModBlocks.DIRT_SLAB.defaultBlockState(), null).getBlock().builtInRegistryHolder()
-                    .key().identifier().getPath().contains("copper"), "dirt slab backed by a waxed copper slab state");
+            BlockState top = ModBlocks.DIRT_SLAB.defaultBlockState().setValue(SlabBlock.TYPE, SlabType.TOP);
+            check(ModBlocks.DIRT_SLAB.getPolymerBlockState(top, null).getBlock().builtInRegistryHolder()
+                    .key().identifier().getPath().contains("copper"), "dirt top slab backed by a waxed copper slab state");
+            check(ModBlocks.DIRT_SLAB.getPolymerBlockState(ModBlocks.DIRT_SLAB.defaultBlockState(), null).getBlock() instanceof SculkSensorBlock
+                    == SlashSlabs.CONFIG.sculkBottom, "dirt bottom slab backed by " + (SlashSlabs.CONFIG.sculkBottom ? "a sculk sensor" : "copper"));
         }
         check(ModBlocks.GRASS_SLAB.getPolymerBreakEventBlockState(ModBlocks.GRASS_SLAB.defaultBlockState(), null).is(Blocks.GRASS_BLOCK),
                 "grass slab break particles/sound come from grass_block");

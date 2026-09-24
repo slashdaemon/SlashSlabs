@@ -46,6 +46,12 @@ public final class SlabsConfig {
     public List<String> grassPalette = new ArrayList<>(List.of("#79C05A", "#88BB67", "#86B783"));
     /** Spend a slot on a real sand slab. Otherwise sand falls back to smooth sandstone slabs. */
     public boolean sandSlab = false;
+    /**
+     * SPIKE: back every material's bottom slab with Polymer's sculk-sensor pools (RESEARCH §2.6)
+     * instead of the copper slab pools. Top slabs keep copper; a material whose top finds no
+     * copper slot shows a vanilla lookalike top. Changes backing states, so Voxy LODs rebuild.
+     */
+    public boolean sculkBottom = false;
 
     /**
      * Per-surface-block overrides of the material map, e.g. {"minecraft:gravel": "minecraft:andesite_slab"}
@@ -83,7 +89,7 @@ public final class SlabsConfig {
 
     private void sanitize() {
         if (grassPalette == null || grassPalette.isEmpty()) grassPalette = new ArrayList<>(List.of("#91BD59"));
-        int maxGrass = sandSlab ? 2 : 3;
+        int maxGrass = sandSlab && !sculkBottom ? 2 : 3;
         if (grassPalette.size() > maxGrass) {
             SlashSlabs.LOGGER.warn("grassPalette has {} entries but only {} slots are free; using the first {}",
                     grassPalette.size(), maxGrass, maxGrass);

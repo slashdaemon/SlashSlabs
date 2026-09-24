@@ -86,6 +86,7 @@ public final class SlabsCommand {
         say(src, pal + " (" + ModBlocks.grassTintsTextured + " textured)");
         say(src, "  slab slots left: bottom " + PolymerBlockResourceUtils.getBlocksLeft(BlockModelType.SLAB_BOTTOM)
                 + ", top " + PolymerBlockResourceUtils.getBlocksLeft(BlockModelType.SLAB_TOP)
+                + ", sculk " + PolymerBlockResourceUtils.getBlocksLeft(BlockModelType.SCULK_SENSOR)
                 + " | colormap " + (GrassColors.available() ? "loaded" : "missing"));
         long n = TerrainSmoother.GEN_CHUNKS.sum();
         say(src, String.format("  worldgen: %d chunks smoothed, %d blocks placed, %.3f ms/chunk", n, TerrainSmoother.GEN_PLACED.sum(),

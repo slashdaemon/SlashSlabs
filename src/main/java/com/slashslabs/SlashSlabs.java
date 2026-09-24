@@ -45,6 +45,8 @@ public final class SlashSlabs implements ModInitializer {
         // patcher blanks copper's sounds in the pack and replays each block's real SoundType
         // from the server (RESEARCH C5). Real copper blocks become server-played too.
         SoundPatcher.convertIntoServerSound(SoundType.COPPER);
+        // Both sculk sensors use SCULK_SENSOR; real sensors become server-played the same way.
+        if (CONFIG.sculkBottom) SoundPatcher.convertIntoServerSound(SoundType.SCULK_SENSOR);
 
         ServerLifecycleEvents.SERVER_STARTING.register(server -> GrassColors.ensureLoaded());
         CommandRegistrationCallback.EVENT.register(SlabsCommand::register);
