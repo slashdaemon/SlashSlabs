@@ -118,7 +118,7 @@ public final class SelfTest {
                             check(level.getBlockState(g).is(Blocks.DIRT), where + ": grass under the slab becomes dirt");
                         }
                         case 1 -> check(at.is(ModBlocks.DIRT_SLAB), where + ": dirt slab expected, got " + at);
-                        case 2 -> check(at.is(ModBlocks.sandTextured ? ModBlocks.SAND_SLAB : Blocks.SMOOTH_SANDSTONE_SLAB), where + ": sand slab expected, got " + at);
+                        case 2 -> check(at.is(expectedSlab(Blocks.SAND)), where + ": sand slab expected, got " + at);
                         case 3 -> check(at.is(Blocks.STONE_SLAB) && at.getValue(SlabBlock.TYPE) == SlabType.BOTTOM, where + ": stone slab expected, got " + at);
                         case 4 -> check(at.is(Blocks.SNOW) && at.getValue(SnowLayerBlock.LAYERS) == SlashSlabs.CONFIG.snowLayers, where + ": snow layers expected, got " + at);
                         case 5 -> {
@@ -126,6 +126,10 @@ public final class SelfTest {
                             check(at.is(ModBlocks.GRASS_SLAB) && at.getValue(SlabBlock.WATERLOGGED) == wet,
                                     where + ": " + (wet ? "waterlogged " : "") + "grass slab expected, got " + at);
                         }
+                        case 6 -> check(at.is(expectedSlab(Blocks.RED_SAND)) && at.getValue(SlabBlock.TYPE) == SlabType.BOTTOM,
+                                where + ": red sand slab expected, got " + at);
+                        case 7 -> check(at.is(expectedSlab(Blocks.TERRACOTTA)) && at.getValue(SlabBlock.TYPE) == SlabType.BOTTOM,
+                                where + ": terracotta slab expected, got " + at);
                         default -> {}
                     }
                 }
@@ -144,6 +148,12 @@ public final class SelfTest {
         }
     }
 
+    /** The block smoothing places on {@code full}: its SlashSlabs slab, or the vanilla fallback when unslotted. */
+    private static Block expectedSlab(Block full) {
+        ModBlocks.Plain m = ModBlocks.plain(full);
+        return m.textured ? m.block : m.fallbackSlab;
+    }
+
     private void checkIdempotent(ServerLevel level, TestField.Field f) {
         TerrainSmoother.Stats again = WorldOps.smooth(level, f.chunks(), false, f.box());
         check(again.placed == 0, "second smooth pass places nothing (placed " + again.placed + ")");
@@ -153,15 +163,19 @@ public final class SelfTest {
     //      (a copper slab for tops, an inactive sculk sensor for bottoms)
 
     private void checkBacking(ServerLevel level, BlockPos pos) {
-        for (Block b : new Block[]{ModBlocks.GRASS_SLAB, ModBlocks.DIRT_SLAB, ModBlocks.SAND_SLAB}) {
-            TerrainSlabBlock slab = (TerrainSlabBlock) b;
-            for (BlockState s : b.getStateDefinition().getPossibleStates()) {
+        for (TerrainSlabBlock slab : ModBlocks.ALL) {
+            for (BlockState s : slab.getStateDefinition().getPossibleStates()) {
                 BlockState client = slab.getPolymerBlockState(s, null);
                 String id = s.toString();
                 check(client != null, id + ": backing state exists");
                 if (client == null) continue;
                 if (s.getValue(SlabBlock.TYPE) == SlabType.DOUBLE) {
                     check(!(client.getBlock() instanceof SlabBlock), id + ": double maps to a full block");
+                    continue;
+                }
+                if (slab.isBottomOnly() && s.getValue(SlabBlock.TYPE) == SlabType.TOP) {
+                    check(client == slab.getPolymerBlockState(s.setValue(SlabBlock.TYPE, SlabType.BOTTOM), null),
+                            id + ": bottom-only top state shows the bottom backing");
                     continue;
                 }
                 boolean wl = s.getValue(SlabBlock.WATERLOGGED);
@@ -188,9 +202,16 @@ public final class SelfTest {
         }
         check(ModBlocks.GRASS_SLAB.getPolymerBreakEventBlockState(ModBlocks.GRASS_SLAB.defaultBlockState(), null).is(Blocks.GRASS_BLOCK),
                 "grass slab break particles/sound come from grass_block");
-        check(ModBlocks.GRASS_SLAB.defaultDestroyTime() == Blocks.GRASS_BLOCK.defaultDestroyTime()
-                        && ModBlocks.DIRT_SLAB.defaultDestroyTime() == Blocks.DIRT.defaultDestroyTime(),
-                "mining time matches the vanilla source blocks");
+        for (TerrainSlabBlock slab : ModBlocks.ALL) {
+            Block full = slab.fullBlock().getBlock();
+            check(slab.defaultDestroyTime() == full.defaultDestroyTime()
+                            && slab.defaultBlockState().requiresCorrectToolForDrops() == full.defaultBlockState().requiresCorrectToolForDrops(),
+                    BuiltInRegistries.BLOCK.getKey(slab) + ": mining time and tool rule match " + BuiltInRegistries.BLOCK.getKey(full));
+        }
+        for (ModBlocks.Plain m : ModBlocks.PLAIN) {
+            check(m.textured, m.id + " received Polymer states");
+            check(m.block.isBottomOnly() == !m.topSlot, m.id + " is bottom-only exactly when it has no top slot");
+        }
     }
 
     // ---- placement rules: bottom/top by click, second slab of the same kind -> vanilla full block
@@ -221,6 +242,14 @@ public final class SelfTest {
         place(level, ModBlocks.DIRT_SLAB_ITEM.getDefaultInstance(), side, Direction.EAST, new Vec3(side.getX() + 1.0, side.getY() + 0.75, side.getZ() + 0.5));
         s = level.getBlockState(east);
         check(s.is(ModBlocks.DIRT_SLAB) && s.getValue(SlabBlock.TYPE) == SlabType.TOP, "clicking the upper half of a side gives a top slab, got " + s);
+        level.setBlock(east, Blocks.AIR.defaultBlockState(), Block.UPDATE_CLIENTS);
+
+        ModBlocks.Plain tc = ModBlocks.plain(Blocks.TERRACOTTA);
+        place(level, tc.item.getDefaultInstance(), side, Direction.EAST, new Vec3(side.getX() + 1.0, side.getY() + 0.75, side.getZ() + 0.5));
+        s = level.getBlockState(east);
+        check(s.is(tc.block) && s.getValue(SlabBlock.TYPE) == SlabType.BOTTOM, "a bottom-only slab stays bottom when clicking the upper half, got " + s);
+        place(level, tc.item.getDefaultInstance(), east, Direction.UP, new Vec3(east.getX() + 0.5, east.getY() + 0.5, east.getZ() + 0.5));
+        check(level.getBlockState(east).is(Blocks.TERRACOTTA), "second terracotta slab completes into terracotta, got " + level.getBlockState(east));
         for (BlockPos p : new BlockPos[]{base, at, side, east}) level.setBlock(p, Blocks.AIR.defaultBlockState(), Block.UPDATE_CLIENTS);
     }
 
@@ -241,7 +270,14 @@ public final class SelfTest {
         check(dropsOnly(Block.getDrops(grass, level, pos, null, null, shovel), ModBlocks.DIRT_SLAB_ITEM), "grass slab drops a dirt slab without Silk Touch");
         check(dropsOnly(Block.getDrops(grass, level, pos, null, null, silk), ModBlocks.GRASS_SLAB_ITEM), "grass slab drops itself with Silk Touch");
         check(dropsOnly(Block.getDrops(ModBlocks.DIRT_SLAB.defaultBlockState(), level, pos, null, null, shovel), ModBlocks.DIRT_SLAB_ITEM), "dirt slab drops itself");
-        check(dropsOnly(Block.getDrops(ModBlocks.SAND_SLAB.defaultBlockState(), level, pos, null, null, ItemStack.EMPTY), ModBlocks.SAND_SLAB_ITEM), "sand slab drops itself by hand");
+        ItemStack pickaxe = new ItemStack(Items.WOODEN_PICKAXE);
+        for (ModBlocks.Plain m : ModBlocks.PLAIN) {
+            BlockState s = m.block.defaultBlockState();
+            boolean needsTool = s.requiresCorrectToolForDrops();
+            ItemStack tool = needsTool ? pickaxe : ItemStack.EMPTY;
+            check(dropsOnly(Block.getDrops(s, level, pos, null, null, tool), m.item), m.id + " drops itself " + (needsTool ? "with a pickaxe" : "by hand"));
+            if (needsTool) check(pickaxe.isCorrectToolForDrops(s) && !ItemStack.EMPTY.isCorrectToolForDrops(s), m.id + " needs a pickaxe to drop");
+        }
     }
 
     private static boolean dropsOnly(List<ItemStack> drops, net.minecraft.world.item.Item item) {
@@ -260,10 +296,24 @@ public final class SelfTest {
         var back = rm.getRecipeFor(RecipeType.CRAFTING, CraftingInput.of(1, 2, List.of(ds, ds)), level);
         check(back.isPresent() && back.get().value().assemble(CraftingInput.of(1, 2, List.of(ds, ds))).is(Items.DIRT), "2 dirt slabs craft back into dirt");
 
-        for (Block b : new Block[]{ModBlocks.GRASS_SLAB, ModBlocks.DIRT_SLAB, ModBlocks.SAND_SLAB}) {
+        for (ModBlocks.Plain m : ModBlocks.PLAIN) {
+            ItemStack full = new ItemStack(m.full.asItem());
+            var craft = rm.getRecipeFor(RecipeType.CRAFTING, CraftingInput.of(3, 1, List.of(full, full, full)), level);
+            check(craft.isPresent() && craft.get().value().assemble(CraftingInput.of(3, 1, List.of(full, full, full))).is(m.item),
+                    "3 " + m.full.getDescriptionId() + " craft into " + m.id);
+            ItemStack slab = new ItemStack(m.item);
+            var undo = rm.getRecipeFor(RecipeType.CRAFTING, CraftingInput.of(1, 2, List.of(slab, slab)), level);
+            check(undo.isPresent() && undo.get().value().assemble(CraftingInput.of(1, 2, List.of(slab, slab))).is(m.full.asItem()),
+                    "2 " + m.id + " craft back into the full block");
+        }
+
+        for (TerrainSlabBlock b : ModBlocks.ALL) {
             BlockState s = b.defaultBlockState();
+            BlockState full = b.fullBlock();
             String id = BuiltInRegistries.BLOCK.getKey(b).toString();
-            check(s.is(BlockTags.MINEABLE_WITH_SHOVEL), id + " in #mineable/shovel");
+            check(s.is(BlockTags.MINEABLE_WITH_SHOVEL) == full.is(BlockTags.MINEABLE_WITH_SHOVEL)
+                            && s.is(BlockTags.MINEABLE_WITH_PICKAXE) == full.is(BlockTags.MINEABLE_WITH_PICKAXE),
+                    id + " is mined with the same tool as " + BuiltInRegistries.BLOCK.getKey(full.getBlock()));
             check(s.is(BlockTags.SLABS), id + " in #slabs");
             check(!s.is(BlockTags.DIRT) && !s.is(BlockTags.SUPPORTS_VEGETATION), id + " stays out of #dirt / #supports_vegetation");
         }

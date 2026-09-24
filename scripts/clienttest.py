@@ -38,7 +38,7 @@ EYE = 1.62
 # TestField.PROFILE -- the fixture's height along x. Expectations are derived from this, not
 # copied from docs/TESTING.md, so a fixture change moves the assertions with it.
 PROFILE = [0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 4, 4, 4, 4, 5, 5, 5, 5]
-STRIP, STRIPS, SLAB_X = 5, 6, 3   # strip width (z), strip count, and a column carrying a grass slab
+STRIP, STRIPS, SLAB_X = 5, 8, 3   # strip width (z), strip count, and a column carrying a grass slab
 LENGTH = len(PROFILE)
 SM = (0, 120, 0)               # smoothed fixture origin        -- relocated by pick_site()
 RAW = (0, 120, 100)            # unsmoothed control fixture origin -- relocated by pick_site()

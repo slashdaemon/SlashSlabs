@@ -2,5 +2,13 @@
  "block.slashslabs.grass_slab": "Grass Slab",
  "block.slashslabs.dirt_slab": "Dirt Slab",
  "block.slashslabs.sand_slab": "Sand Slab",
+ "block.slashslabs.red_sand_slab": "Red Sand Slab",
+ "block.slashslabs.terracotta_slab": "Terracotta Slab",
+ "block.slashslabs.orange_terracotta_slab": "Orange Terracotta Slab",
+ "block.slashslabs.yellow_terracotta_slab": "Yellow Terracotta Slab",
+ "block.slashslabs.brown_terracotta_slab": "Brown Terracotta Slab",
+ "block.slashslabs.red_terracotta_slab": "Red Terracotta Slab",
+ "block.slashslabs.white_terracotta_slab": "White Terracotta Slab",
+ "block.slashslabs.light_gray_terracotta_slab": "Light Gray Terracotta Slab",
  "itemGroup.slashslabs.slabs": "SlashSlabs"
 }

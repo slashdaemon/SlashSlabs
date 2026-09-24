@@ -41,8 +41,8 @@ public final class MaterialMap {
         Choice dirt = new Choice(Kind.CUSTOM, ModBlocks.DIRT_SLAB);
         for (Block b : new Block[]{Blocks.DIRT, Blocks.COARSE_DIRT, Blocks.ROOTED_DIRT, Blocks.PODZOL, Blocks.MYCELIUM})
             m.put(b, dirt);
-        m.put(Blocks.SAND, ModBlocks.sandTextured ? new Choice(Kind.CUSTOM, ModBlocks.SAND_SLAB) : vanilla(Blocks.SMOOTH_SANDSTONE_SLAB));
-        m.put(Blocks.RED_SAND, vanilla(Blocks.SMOOTH_RED_SANDSTONE_SLAB));
+        for (ModBlocks.Plain p : ModBlocks.PLAIN)
+            m.put(p.full, p.textured ? new Choice(Kind.CUSTOM, p.block) : p.smoothWhenUnslotted ? vanilla(p.fallbackSlab) : Choice.NONE);
         m.put(Blocks.STONE, vanilla(Blocks.STONE_SLAB));
         m.put(Blocks.COBBLESTONE, vanilla(Blocks.COBBLESTONE_SLAB));
         m.put(Blocks.MOSSY_COBBLESTONE, vanilla(Blocks.MOSSY_COBBLESTONE_SLAB));

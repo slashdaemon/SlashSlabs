@@ -3,10 +3,12 @@ package com.slashslabs.pack;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.slashslabs.SlashSlabs;
+import com.slashslabs.block.ModBlocks;
 import com.slashslabs.color.ColorMath;
 import eu.pb4.polymer.common.api.PolymerCommonUtils;
 import eu.pb4.polymer.resourcepack.api.PolymerResourcePackUtils;
 import eu.pb4.polymer.resourcepack.api.ResourcePackBuilder;
+import net.minecraft.core.registries.BuiltInRegistries;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
@@ -19,7 +21,7 @@ import java.nio.file.Path;
 /**
  * Builds SlashSlabs' part of the Polymer server pack at pack-build time. Grass textures are
  * derived from the vanilla client jar Polymer already caches, so the mod jar itself carries no
- * Mojang pixels (RESEARCH §5.4-5.5). Dirt and sand models reference vanilla textures directly.
+ * Mojang pixels (RESEARCH §5.4-5.5). Dirt and the plain materials reference vanilla textures directly.
  */
 public final class PackGenerator {
     private PackGenerator() {}
@@ -49,18 +51,31 @@ public final class PackGenerator {
             model(b, "grass_slab_t" + t, "minecraft:block/dirt", top, side, "minecraft:block/dirt", true);
         }
         model(b, "dirt_slab", "minecraft:block/dirt", "minecraft:block/dirt", "minecraft:block/dirt", "minecraft:block/dirt", false);
-        model(b, "sand_slab", "minecraft:block/sand", "minecraft:block/sand", "minecraft:block/sand", "minecraft:block/sand", false);
+        for (ModBlocks.Plain m : ModBlocks.PLAIN) {
+            String tex = "minecraft:block/" + BuiltInRegistries.BLOCK.getKey(m.full).getPath();
+            model(b, m.id, tex, tex, tex, tex, false);
+        }
 
         itemDefinition(b, "grass_slab", "slashslabs:block/grass_slab_t0_bottom");
         itemDefinition(b, "dirt_slab", "slashslabs:block/dirt_slab_bottom");
-        itemDefinition(b, "sand_slab", "slashslabs:block/sand_slab_bottom");
+        for (ModBlocks.Plain m : ModBlocks.PLAIN) itemDefinition(b, m.id, "slashslabs:block/" + m.id + "_bottom");
 
         JsonObject lang = new JsonObject();
         lang.addProperty("block.slashslabs.grass_slab", "Grass Slab");
         lang.addProperty("block.slashslabs.dirt_slab", "Dirt Slab");
-        lang.addProperty("block.slashslabs.sand_slab", "Sand Slab");
+        for (ModBlocks.Plain m : ModBlocks.PLAIN) lang.addProperty("block.slashslabs." + m.id, title(m.id));
         lang.addProperty("itemGroup.slashslabs.slabs", "SlashSlabs");
         b.addStringData("assets/slashslabs/lang/en_us.json", lang.toString());
+    }
+
+    /** "light_gray_terracotta_slab" -> "Light Gray Terracotta Slab". */
+    static String title(String id) {
+        StringBuilder out = new StringBuilder();
+        for (String w : id.split("_")) {
+            if (!out.isEmpty()) out.append(' ');
+            out.append(Character.toUpperCase(w.charAt(0))).append(w.substring(1));
+        }
+        return out.toString();
     }
 
     private static BufferedImage read(Path root, String name) throws IOException {

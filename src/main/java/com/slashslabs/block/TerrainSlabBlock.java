@@ -12,14 +12,16 @@ import java.util.function.Supplier;
 
 /**
  * A server-side terrain slab. The world stores the real block; each client receives a spare
- * vanilla slab state (Polymer's waxed-copper slab pool) that the server pack retextures.
- * A double slab never exists as this block: completing one places the vanilla full block.
+ * vanilla state that the server pack retextures: an inactive sculk sensor for a bottom slab,
+ * a waxed-copper slab for a top (RESEARCH §2.6). A double slab never exists as this block:
+ * completing one places the vanilla full block. A material without a top slot is bottom-only.
  */
 public class TerrainSlabBlock extends SlabBlock implements PolymerTexturedBlock {
     private final Supplier<BlockState> fullBlock;
     private final Supplier<BlockState> breakState;
     /** [variant][0 bottom, 1 top][0 dry, 1 waterlogged]; variant is the grass tint, 0 for others. */
     private BlockState[][][] backing;
+    private boolean bottomOnly;
 
     public TerrainSlabBlock(Properties properties, Supplier<BlockState> fullBlock, Supplier<BlockState> breakState) {
         super(properties);
@@ -29,6 +31,15 @@ public class TerrainSlabBlock extends SlabBlock implements PolymerTexturedBlock 
 
     public void setBacking(BlockState[][][] backing) {
         this.backing = backing;
+    }
+
+    /** Players can only place the bottom half; a top state (only /setblock makes one) shows the bottom backing. */
+    public void setBottomOnly() {
+        this.bottomOnly = true;
+    }
+
+    public boolean isBottomOnly() {
+        return bottomOnly;
     }
 
     /** Which backing variant a state uses. */
@@ -58,7 +69,8 @@ public class TerrainSlabBlock extends SlabBlock implements PolymerTexturedBlock 
     public @Nullable BlockState getStateForPlacement(BlockPlaceContext context) {
         BlockState replaced = context.getLevel().getBlockState(context.getClickedPos());
         if (replaced.is(this)) return completeDouble(context);
-        return super.getStateForPlacement(context);
+        BlockState s = super.getStateForPlacement(context);
+        return bottomOnly && s != null && s.getValue(TYPE) == SlabType.TOP ? s.setValue(TYPE, SlabType.BOTTOM) : s;
     }
 
     /** The full block that replaces a slab completed into a double. */

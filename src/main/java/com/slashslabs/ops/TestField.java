@@ -12,17 +12,22 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Stepped-terrain fixture for manual testing and the self-test (PLAN M0). Six strips, 5 wide
+ * Stepped-terrain fixture for manual testing and the self-test (PLAN M0). Eight strips, 5 wide
  * (z) and 20 long (x), each a staircase with one-block steps and a two-block cliff:
- * grass, dirt, sand, stone, snow block, and grass with shallow water over the low half.
+ * grass, dirt, sand, stone, snow block, grass with shallow water over the low half, red sand
+ * and terracotta. New strips go at the end so earlier strips keep their positions.
  */
 public final class TestField {
     private TestField() {}
 
-    public static final int LENGTH = 20, STRIP = 5, STRIPS = 6, CLEAR = 12;
+    public static final int LENGTH = 20, STRIP = 5, STRIPS = 8, CLEAR = 12;
     /** Height profile along x (relative to the base): 1-block steps, then a 2-block cliff at x=12. */
     static final int[] PROFILE = {0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 4, 4, 4, 4, 5, 5, 5, 5};
-    static final Block[] GROUND = {Blocks.GRASS_BLOCK, Blocks.DIRT, Blocks.SAND, Blocks.STONE, Blocks.SNOW_BLOCK, Blocks.GRASS_BLOCK};
+    static final Block[] GROUND = {Blocks.GRASS_BLOCK, Blocks.DIRT, Blocks.SAND, Blocks.STONE, Blocks.SNOW_BLOCK, Blocks.GRASS_BLOCK,
+            Blocks.RED_SAND, Blocks.TERRACOTTA};
+    /** What fills each strip below its surface block. */
+    static final Block[] UNDER = {Blocks.DIRT, Blocks.DIRT, Blocks.SANDSTONE, Blocks.DIRT, Blocks.DIRT, Blocks.DIRT,
+            Blocks.RED_SANDSTONE, Blocks.TERRACOTTA};
 
     public record Field(BlockPos origin, BoundingBox box) {
         /** World position of strip {@code s}, profile step {@code x}, row {@code z}, at the ground top. */
@@ -58,7 +63,7 @@ public final class TestField {
                     int top = PROFILE[x];
                     for (int y = -1; y <= top; y++) {
                         p.set(origin.getX() + x, origin.getY() + y, origin.getZ() + s * (STRIP + 1) + z);
-                        set(level, p, y == top ? ground : (s == 2 ? Blocks.SANDSTONE : Blocks.DIRT).defaultBlockState());
+                        set(level, p, y == top ? ground : UNDER[s].defaultBlockState());
                     }
                 }
             if (s == 5) {

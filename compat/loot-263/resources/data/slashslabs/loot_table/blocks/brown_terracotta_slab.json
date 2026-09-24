@@ -1,0 +1,1 @@
+{"type":"minecraft:block","pools":[{"rolls":1,"entries":[{"type":"minecraft:item","name":"slashslabs:brown_terracotta_slab"}],"condition":{"type":"minecraft:survives_explosion"}}],"random_sequence":"slashslabs:blocks/brown_terracotta_slab"}
