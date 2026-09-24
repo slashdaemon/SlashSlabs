@@ -304,7 +304,9 @@ def tier_unit(results, bands):
 def tier_build(results):
     code, text = run([ROOT / ("gradlew.bat" if os.name == "nt" else "gradlew"), "buildAll", "--console=plain"],
                      results.out_dir / "buildAll.log", env=gradle_env())
-    jars = sorted(p.name for p in (ROOT / "build" / "release").glob("slashslabs-*.jar"))
+    # Only the current version counts: build/release/ keeps older releases' jars too.
+    version = re.search(r"mod_version=(\S+)", (ROOT / "gradle.properties").read_text()).group(1)
+    jars = sorted(p.name for p in (ROOT / "build" / "release").glob(f"slashslabs-{version}+*.jar"))
     results.add("build", "buildAll", code == 0 and len(jars) == len(BANDS), ", ".join(jars) if code == 0 else tail(text))
 
 

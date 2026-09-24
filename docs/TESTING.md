@@ -14,7 +14,7 @@ order, asserts the server's real config, cleans up between tiers and writes
 |---|---|
 | `./gradlew :versions:26.1.2:test` | JUnit: rise detection, colour maths, palette fitting (12 tests) |
 | `python scripts/devserver.py --band <b> --fresh -c "slashslabs selftest"` | Loom dev server + RCON commands |
-| `/slashslabs selftest` | 399 server-side checks: smoothing output on the six-strip fixture (grass, dirt, sand, stone, snow, shallow water; one-block steps and a two-block cliff), idempotence, Polymer backing state and collision for every block state, placement (bottom/top/double → vanilla block), drops with and without Silk Touch, recipes, tags, grass spread/pull/decay (dry and waterlogged), the D6 tag, purge |
+| `/slashslabs selftest` | 729 server-side checks (0.2.0; 399 in 0.1.0): smoothing output on the eight-strip fixture (grass, dirt, sand, stone, snow, shallow water, red sand, terracotta; one-block steps and a two-block cliff), bottom-only placement and tool rules, idempotence, Polymer backing state and collision for every block state, placement (bottom/top/double → vanilla block), drops with and without Silk Touch, recipes, tags, grass spread/pull/decay (dry and waterlogged), the D6 tag, purge |
 | `python scripts/prodtest.py [26.1.2 26.2 26.3 tbs]` | Release gate: the **shipped** jars on real Fabric servers (Fabric server launcher, Fabric API from Modrinth); `tbs` adds the whole TBS 1.5.0 server modset |
 | `python scripts/determinism.py 8` | Same seed, three generation orders + one run with smoothing off |
 | `python scripts/survey.py 5` | M2 survey (see `SURVEY.md`) |
@@ -30,15 +30,20 @@ Prism instances made for this: `SlashSlabs-Vanilla-26.1.2` (stock vanilla, no lo
 
 | Target | Self-test | Worldgen blocks in 11×11 chunks | SlashSlabs/Polymer errors | Unsafe-worldgen warnings |
 |---|---|---|---|---|
-| 26.1.2 | 398/398 | 3339 | 0 | 0 |
-| 26.2 | 398/398 | 3339 | 0 | 0 |
-| 26.3 | 398/398 | 3337 | 0 | 0 |
-| tbs (26.1.2 + TBS modset: C2ME, Lithium, Krypton, Voxy World Gen V2, Geophilic, Explorify, Structory (+Towers), Towns & Towers, Dungeons & Taverns, Moog's, Katters, Sparse Structures, Incendium, Nullscape, Amplified Nether, BlueMap, Geyser/Floodgate, LuckPerms, Ledger …) | 398/398 | 3345 | 0 | 0 |
+| 26.1.2 | 729/729 | 3339 | 0 | 0 |
+| 26.2 | 729/729 | 3339 | 0 | 0 |
+| 26.3 | 729/729 | 3337 | 0 | 0 |
+| tbs (26.1.2 + TBS modset: C2ME, Lithium, Krypton, Voxy World Gen V2, Geophilic, Explorify, Structory (+Towers), Towns & Towers, Dungeons & Taverns, Moog's, Katters, Sparse Structures, Incendium, Nullscape, Amplified Nether, BlueMap, Geyser/Floodgate, LuckPerms, Ledger …) | 729/729 | 3353 | 0 | 0 |
 
 The first run caught a packaging bug that dev runs cannot see: `polymer-sound-patcher` declares a
 dependency on `polymer-resource-pack-extras` in its `fabric.mod.json` but not its POM. Fabric
 Loader silently drops a nested mod whose dependency is missing, and startup then failed with
 `NoClassDefFoundError`. The extras module is now nested too.
+
+0.2.0 (`regress.py full`, 2026-09-23): dev self-test 729/729 on all three bands, the same count
+under prodtest (0.1.0 had 399 vs 398). The tbs count rose from 3345 to 3353 because red sand and
+terracotta rises in that region are now smoothed; the fixture region of the other targets has
+neither. Determinism 97.07% rows-vs-reverse, 97.95% rows-vs-shuffle (unchanged).
 
 ### M0 — vanilla client (stock 26.1.2 client, no mods; AutoHost same-port pack)
 
