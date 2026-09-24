@@ -4,6 +4,18 @@
 
 **Players install nothing.** Stock vanilla clients join and see real-looking slabs, delivered through a resource pack that the server sends automatically.
 
+![A snowy shore smoothed by SlashSlabs](https://raw.githubusercontent.com/slashdaemon/SlashSlabs/33f225771f5c4a51b579692d3681f30703caa4df/assets/store/03-landscape-snowy-shore.png)
+
+## Before and after
+
+The same hill from the same camera, with SlashSlabs:
+
+![With SlashSlabs: half-slab steps feather the grass slope and the snowy shoreline](https://raw.githubusercontent.com/slashdaemon/SlashSlabs/33f225771f5c4a51b579692d3681f30703caa4df/assets/store/01-with-slashslabs-snowy-taiga.png)
+
+…and in plain vanilla:
+
+![Vanilla: the same hill in whole blocks](https://raw.githubusercontent.com/slashdaemon/SlashSlabs/33f225771f5c4a51b579692d3681f30703caa4df/assets/store/02-vanilla-same-camera.png)
+
 ## What it does
 
 When a chunk generates, SlashSlabs finds every column whose neighbour is exactly one block higher and places a bottom slab on the lower one. A one-block rise becomes two half steps.
@@ -15,6 +27,8 @@ When a chunk generates, SlashSlabs finds every column whose neighbour is exactly
 - **Stone, cobblestone, deepslate, tuff, andesite, diorite, granite, blackstone, sandstone, red sandstone, mud** → the matching vanilla slab
 - **Snowy biomes** → snow layers
 - **Shallow water** → a waterlogged slab
+
+![Badlands: red sand terraced with red sand slabs, and terracotta bands stepped with matching terracotta slabs](https://raw.githubusercontent.com/slashdaemon/SlashSlabs/33f225771f5c4a51b579692d3681f30703caa4df/assets/store/04-badlands-red-sand-terracotta.png)
 
 It leaves alone:
 
