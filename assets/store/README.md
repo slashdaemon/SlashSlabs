@@ -1,5 +1,10 @@
 # Store listing — CurseForge / Modrinth
 
+## Projects
+
+- **CurseForge:** project 1709433 (authors.curseforge.com/#/projects/1709433).
+- **Modrinth:** slug `slashslabs` (being set up).
+
 ## Text
 
 - **Summary:** Server-side half-slab steps on every one-block terrain rise, so players walk the
