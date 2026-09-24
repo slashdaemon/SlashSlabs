@@ -22,6 +22,7 @@ worldgen smoothing on, from the vanilla Prism client (`SlashSlabs-Vanilla-26.1.2
 | `01-with-slashslabs-snowy-taiga.png` | Snowy taiga shore with smoothing on: half-steps feather the grass slope and the snow shoreline |
 | `02-vanilla-same-camera.png` | The identical camera with the slabs purged — same hill in whole blocks |
 | `03-landscape-snowy-shore.png` | Wider establishing shot of the same shore, for visual consistency with the pair |
+| `04-badlands-red-sand-terracotta.png` | 0.2.0: badlands red sand terraced with red sand slabs, terracotta bands stepped with matching terracotta slabs. Taken by hand in survival view (hotbar and crosshair visible); camera `2780.4 84.9 -2685.9 yaw 87.8 pitch 32.6` for a clean F1 retake |
 
 `01` and `02` are the same camera position, the same in-game time and the same weather. Only the
 mod differs, so the comparison cannot be accused of a flattering angle.
