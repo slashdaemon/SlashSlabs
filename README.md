@@ -1,8 +1,9 @@
 # SlashSlabs
 
 **Walk the world without jumping.** SlashSlabs is a server-side Fabric mod that puts a half-slab
-step wherever generated terrain rises by exactly one block. Grass, dirt, stone, sand and snow
-all get matching steps, and grass and dirt slabs become real, placeable blocks.
+step wherever generated terrain rises by exactly one block. Grass, dirt, sand, red sand,
+terracotta, stone and snow all get matching steps, and the new slabs (grass, dirt, sand, red sand
+and seven terracottas) become real, placeable blocks.
 
 Players need **no client mod**. A stock vanilla client connects and sees real-looking grass slabs:
 each custom slab is sent to the client as a spare vanilla slab state, which a server resource pack
@@ -47,7 +48,8 @@ the rise becomes two half steps, which any player walks up.
 |---|---|
 | Grass block | **Grass slab**, textured in the nearest of three greens for the biome |
 | Dirt, coarse dirt, rooted dirt, podzol, mycelium | **Dirt slab** |
-| Sand · red sand | Smooth sandstone slab · smooth red sandstone slab (or a real sand slab, see `sandSlab`) |
+| Sand · red sand | **Sand slab** · **red sand slab** |
+| Terracotta: plain, orange, yellow, brown, red, white, light gray (the badlands colours) | The matching **terracotta slab** |
 | Stone, cobblestone, mossy cobblestone, deepslate, tuff, andesite, diorite, granite, blackstone, sandstone, red sandstone, mud | The matching vanilla slab (mud → mud brick) |
 | Grass or dirt in a snowy biome, snow blocks | Snow, 5 layers (a 0.5 step each way) |
 | Shallow water on the lower side | The waterlogged slab (shorelines) |
@@ -67,17 +69,20 @@ datapack.
 
 ## How it works
 
-- **Vanilla-client blocks.** A vanilla client only knows vanilla blocks. Polymer keeps a pool of
-  vanilla slab states nobody sees in normal play (waxed copper slabs, which it already shows to
-  clients as their unwaxed look). SlashSlabs borrows four of them. The client uses the borrowed
-  state for collision and movement, and that state has exactly a slab's shape, so walking,
-  sprinting and jumping stay in sync with the server. The resource pack draws each borrowed state
-  as a grass or dirt slab.
+- **Vanilla-client blocks.** A vanilla client only knows vanilla blocks. Polymer keeps pools of
+  vanilla states nobody sees in normal play, and shows the real blocks those states belong to
+  with a lookalike state instead. SlashSlabs borrows two kinds, each with exactly a slab's shape:
+  - bottom slabs use **sculk sensor** states with an unused redstone power level (150 of them);
+  - top slabs use the four **waxed copper slab** states.
+
+  The client uses the borrowed state for collision and movement, so walking, sprinting and
+  jumping stay in sync with the server. The resource pack draws each borrowed state as the right
+  slab.
 - **Server-side mining.** Polymer runs mining on the server, so a grass slab breaks at grass
   speed, not copper speed, with the crack animation and no ghost blocks.
-- **Sounds.** Break particles and sounds come from the real block (grass, gravel, sand).
-  Footstep, fall and hit sounds are replayed by the server with the right sound, because the
-  client would otherwise play copper sounds.
+- **Sounds.** Break particles and sounds come from the real block (grass, gravel, sand,
+  terracotta). Footstep, fall and hit sounds are replayed by the server with the right sound,
+  because the client would otherwise play sculk sensor or copper sounds.
 - **Textures without Mojang pixels.** The mod jar contains no Minecraft textures. At startup the
   server takes the vanilla client jar (which Polymer downloads from Mojang), tints the grass
   textures to the three palette greens and writes them into the server pack.
@@ -134,8 +139,7 @@ needs a restart.
 | `structureGuard` | `true` | Skip columns inside structure pieces |
 | `maxWaterDepth` | `1` | Deepest water a waterlogged step may be placed in (`0` = never under water) |
 | `snowLayers` | `5` | Snow layers used at a rise in snowy biomes (5 gives a half step both ways) |
-| `grassPalette` | `["#79C05A", "#88BB67", "#86B783"]` | Grass slab greens, one resource slot each (at most 3, or 2 with `sandSlab`) |
-| `sandSlab` | `false` | Use a real sand slab instead of smooth sandstone (costs one grass green) |
+| `grassPalette` | `["#79C05A", "#88BB67", "#86B783"]` | Grass slab greens (at most 3) |
 | `materialOverrides` | `{}` | Per surface block: a slab id, `"snow"` or `"none"`. Example: `{"minecraft:gravel": "minecraft:andesite_slab", "minecraft:podzol": "none"}` |
 | `stepHeight` | `false` | Companion module: players step up full blocks (step height 1.0) |
 | `stepHeightOffWhileSneaking` | `true` | …except while sneaking |
@@ -163,7 +167,7 @@ level 2.
 | `/slashslabs purge <radius> [stand_in]` | `purge` | Turn every SlashSlabs block back into vanilla, or into a vanilla slab `stand_in` (e.g. `minecraft:mud_brick_slab`) |
 | `/slashslabs survey <radius>` | `survey` | Rise-edge surface statistics and fitted palettes; JSON report in `slashslabs/` |
 | `/slashslabs test-field [raw]` | `test_field` | Build a stepped test patch next to you (`raw` = without slabs) |
-| `/slashslabs selftest` | `selftest` | Run the server-side self-test (about 400 checks) |
+| `/slashslabs selftest` | `selftest` | Run the server-side self-test (about 730 checks) |
 | `/slashslabs dump`, `dumpcols`, `gen` | `dump`, `dumpcols`, `gen` | Diagnostics used by the determinism and cost tests |
 
 Vanilla clients open the SlashSlabs creative tab with Polymer's `/polymer creative`.
@@ -174,19 +178,22 @@ Vanilla clients open the SlashSlabs creative tab with Polymer's `/polymer creati
 |---|---|
 | **Grass slab** | Spreads to dirt and dirt slabs, and dies to a dirt slab under a covering block or under water, like grass. Drops a dirt slab, or itself with Silk Touch. Mines at grass speed with a shovel. Bone meal, hoes and shovels do nothing. Plants can't be placed on it (as on any slab) |
 | **Dirt slab** | Picks up grass from nearby grass blocks under the same light rules as vanilla dirt. Drops itself |
-| **Sand slab** | Only when `sandSlab` is on. Doesn't fall |
+| **Sand slab**, **red sand slab** | Don't fall. Mine with a shovel |
+| **Terracotta slabs** (7 colours) | Bottom half only: clicking the upper half of a block still places a bottom slab. Need a pickaxe to drop, like terracotta |
 
-- Placing follows vanilla slab rules (top or bottom half by where you click, waterlogging).
-  Placing a second slab of the same kind on a slab gives the **vanilla full block** (grass
-  block, dirt, sand), so no double-slab block ever exists.
+- Placing follows vanilla slab rules (top or bottom half by where you click, waterlogging),
+  except that terracotta slabs are bottom-only. Placing a second slab of the same kind on a slab
+  gives the **vanilla full block** (grass block, dirt, sand, terracotta …), so no double-slab block
+  ever exists.
+- Top grass slabs show the first palette green whatever the biome (only four top slots exist).
 - The grass slab picks its green from the biome where it is placed.
 - Mobs don't spawn on the slabs by default.
 
 | Recipe | |
 |---|---|
-| 3 grass blocks / dirt / sand in a row | 6 slabs |
+| 3 grass blocks / dirt / sand / red sand / terracotta in a row | 6 slabs |
 | 2 slabs | 1 block |
-| Stonecutter: dirt or sand | 2 slabs |
+| Stonecutter: dirt, sand, red sand or terracotta | 2 slabs |
 
 ## Compatibility
 
@@ -199,22 +206,30 @@ Tested with the shipped jars on real servers (see [`docs/TESTING.md`](docs/TESTI
   Geyser/Floodgate, LuckPerms, Ledger, Chunky.
 - **BlueMap** renders the slabs from the models inside the jar; no extra BlueMap pack needed.
 - **Voxy** LODs on the client show the retextured slabs.
-- **Other Polymer mods**: fine, as long as they don't need the same slab slots (see below).
+- **Other Polymer mods**: fine, as long as they don't need the same slots (see below).
 
 ## Limitations
 
-- **Four slots, shared.** The borrowed vanilla slab states are limited: Polymer has four per
-  slab shape, shared by every Polymer mod on the server. SlashSlabs uses all four (dirt plus three
-  greens). A material that gets no slot falls back to a vanilla lookalike slab (mud brick for dirt,
-  smooth sandstone for sand). `/slashslabs info` and `/polymer blocks_module_state_report` show
-  who has what.
+- **Slots, shared.** Borrowed states are shared by every Polymer mod on the server. Bottom slabs
+  take 13 of Polymer's 150 sculk sensor states. Top slabs take all four copper slots: dirt, sand,
+  red sand, and one grass green. A material that gets no slot falls back to a vanilla lookalike
+  slab (mud brick for dirt, smooth sandstone for sand, smooth red sandstone for red sand), or is
+  not smoothed at all (terracotta). `/slashslabs info` and `/polymer blocks_module_state_report`
+  show who has what.
+- **Faint glow.** Sculk sensors give off light level 1 on the client. After a slab is placed or
+  changes while a player watches, the client may show a barely visible glow next to it. Chunks
+  that load normally show the server's light and don't glow.
 - **Colour steps.** A grass slab has one of three fixed greens, while real grass shades smoothly.
   Where a biome's green is far from all three (savanna and badlands yellows, swamp olive, jungle
   green), a slab can look slightly off next to the grass beside it.
-- **Copper sounds.** To give slabs their proper footstep sounds, copper blocks' step, hit and fall
-  sounds are played by the server instead of the client: same sounds, with network latency.
-- **Resource pack needed.** Without it, players see copper slabs. Bedrock players (Geyser) see
-  copper slabs for now.
+- **Copper and sculk sensor sounds.** To give slabs their proper footstep sounds, the step, hit
+  and fall sounds of copper blocks and sculk sensors are played by the server instead of the
+  client: same sounds, with network latency.
+- **Resource pack needed.** Without it, players see sculk sensors (bottom slabs) and copper slabs
+  (top slabs). Bedrock players (Geyser) see the same for now.
+- **Upgrading from 0.1.0.** Every slab now uses a different borrowed state. Clients' Voxy LODs of
+  already-explored terrain show the old look until Voxy rebuilds them. Remove the `sandSlab`
+  option from `config/slashslabs.json`; it is ignored, and sand always gets a real slab now.
 - **One-block rises only.** Two-block rises, diagonal corners (unless `diagonals`) and structure
   paths stay as they are.
 - **Existing chunks** are only smoothed on request (`/slashslabs smooth`).

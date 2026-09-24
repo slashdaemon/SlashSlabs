@@ -253,7 +253,8 @@ backing is a genuine sandstone state the patcher never touches. (H) With the scu
 
 Researched 2026-09-23 against Polymer 0.16.5 / 0.17.5 / 0.18.2 and the 26.1.2 / 26.2 / 26.3
 jars, by booting each band's server and comparing every registered block state's collision and
-outline shape to both slab boxes. Nothing was built from it yet.
+outline shape to both slab boxes. Built in 0.2.0 (`ModBlocks.request`, bottom-only terracotta);
+slot layout and results in `TESTING.md`.
 
 **Which states have a slab's shape (H, full registry, identical on all three bands):**
 
@@ -551,8 +552,10 @@ wanted, use `UseBlockCallback` server-side on every band.
 
 ### 4.12 Material coverage and `materialOverrides` (H)
 
-Three materials cannot be served well within the copper pools, for two different reasons (both
-lift for bottom slabs once materials move to the sculk pools, §2.6):
+Three materials could not be served well within the copper pools, for two different reasons.
+**Since 0.2.0 both are solved** by the sculk pools (§2.6): sand, red sand and the seven badlands
+terracottas have real bottom slabs, and terracotta is bottom-only. The analysis below is kept for
+servers that turn a material off, and for the case where another Polymer mod exhausts the pools:
 
 - **Terracotta has no vanilla slab in any colour.** `minecraft:terracotta_slab` and the dyed
   variants are all "Unknown block type" on 26.1.2. Badlands therefore cannot be smoothed by a

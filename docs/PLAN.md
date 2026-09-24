@@ -91,6 +91,11 @@ Polymer builds exist for every target line (Modrinth, `polymer` project):
 | **Dirt** (coarse dirt, rooted dirt, podzol fall back here) | Custom | 1 |
 | **Sand** / red sand / gravel / path | Custom or fallback, decided by survey (M2) | 0–1 |
 
+> **Since 0.2.0 (C16):** bottoms cost a sculk state, not a slot. Sand, red sand and the seven
+> badlands terracottas (plain, orange, yellow, brown, red, white, light gray) are custom. The four
+> copper top slots go to dirt, sand, grass tint 0 (shared by the other tints) and red sand;
+> terracotta is bottom-only. Request order is fixed and append-only (`ModBlocks.PLAIN`).
+
 **Allocation is data-driven.** A survey command (M2) samples generated chunks on each target
 seed/modset and counts the surface material at every one-block rise. The four slots go to the
 highest-frequency materials that vanilla cannot cover; the rest fall back (podzol → dirt slab,
