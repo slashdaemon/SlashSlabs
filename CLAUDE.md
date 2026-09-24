@@ -40,6 +40,10 @@ python scripts/devserver.py --band 26.3 --fresh -c "slashslabs selftest"
 python scripts/prodtest.py                  # release gate: shipped jars on real servers + TBS modset
 ```
 
+- **Publishing:** `python scripts/publish-{curseforge,modrinth}.py --version <v> [--dry-run]`
+  upload every `build/release/slashslabs-<v>+mc*-fabric.jar` (ported from SlashRails). Tokens and
+  project ids come from `.env` (`devenv pull SlashSlabs`). CurseForge files are tagged Server only;
+  Modrinth declares Fabric API required and Polymer embedded. Never publish without the owner's go.
 - **`prodtest.py` is the release gate.** Dev runs can't see packaging bugs (a nested Polymer
   module missing a dependency is dropped silently only in production).
 - Never run Gradle in this checkout while a dev server runs. Dev servers use RCON 25581 (game
