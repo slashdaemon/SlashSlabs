@@ -236,7 +236,7 @@ class Results:
 
 # ---- doctor
 
-def doctor(results, fix_config=False, kill=False):
+def doctor(results, fix_config=False, kill=False, builds=False):
     print("doctor")
     jv = subprocess.run([str(JAVA25 / "bin" / "java"), "-version"], capture_output=True, text=True)
     ver = (jv.stderr or jv.stdout or "").splitlines()[0] if jv.returncode == 0 else "not runnable"
@@ -256,8 +256,10 @@ def doctor(results, fix_config=False, kill=False):
     version = re.search(r"mod_version=(\S+)", (ROOT / "gradle.properties").read_text()).group(1)
     jars = sorted((ROOT / "build" / "release").glob("slashslabs-*.jar")) if (ROOT / "build" / "release").exists() else []
     matched = [j for j in jars if f"-{version}+" in j.name]
-    results.add("doctor", "release jars", len(matched) == len(BANDS),
-                f"{len(matched)}/{len(BANDS)} at {version}" + (" (run buildAll)" if len(matched) != len(BANDS) else ""))
+    # Tiers that run buildAll first only need the jars afterwards, so a version bump doesn't block them.
+    note = "" if len(matched) == len(BANDS) else (" (this tier builds them)" if builds else " (run buildAll)")
+    results.add("doctor", "release jars", builds or len(matched) == len(BANDS),
+                f"{len(matched)}/{len(BANDS)} at {version}" + note)
 
     drift_all = []
     for band in BANDS:
@@ -403,7 +405,7 @@ def main(argv=None):
     print(f"SlashSlabs regression: {a.verb} → {results.out_dir}\n")
 
     if not a.skip_doctor:
-        if not doctor(results, a.reset_config, a.kill_stale) and a.verb != "doctor":
+        if not doctor(results, a.reset_config, a.kill_stale, builds=a.verb in ("bands", "gate", "full")) and a.verb != "doctor":
             print("\ndoctor failed — fix the above (or pass --skip-doctor) before running a tier.")
             print(f"\nreport: {results.write()}")
             return 2

@@ -45,6 +45,12 @@ under prodtest (0.1.0 had 399 vs 398). The tbs count rose from 3345 to 3353 beca
 terracotta rises in that region are now smoothed; the fixture region of the other targets has
 neither. Determinism 97.07% rows-vs-reverse, 97.95% rows-vs-shuffle (unchanged).
 
+0.2.1 (`regress.py gate`, licence-only; no code change from 0.2.0): all four targets pass. The block
+counts drifted slightly between identical code (26.2 3337, 26.3 3336, tbs 3346), so the prodtest
+count is not exact from run to run: prodtest generates its area concurrently, and generation order
+moves a few columns (vanilla trees, see M3). Treat a change of a few blocks as noise and a change
+of tens as a signal.
+
 ### M0 — vanilla client (stock 26.1.2 client, no mods; AutoHost same-port pack)
 
 | Check | Result |
