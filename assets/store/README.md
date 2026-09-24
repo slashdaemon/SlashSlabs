@@ -3,7 +3,10 @@
 ## Projects
 
 - **CurseForge:** project 1709433 (authors.curseforge.com/#/projects/1709433).
-- **Modrinth:** slug `slashslabs` (being set up).
+- **Modrinth:** slug `slashslabs`, project id `M1TelWnQ`.
+- **First store release:** 0.2.1 (2026-09-23), via `scripts/publish-{curseforge,modrinth}.py`.
+  CurseForge files 8961627 / 8961628 / 8961629; Modrinth versions K8lP8d5L / TJPmGjsd / vFS4Lxjo
+  (26.1.2 / 26.2 / 26.3).
 
 ## Text
 
