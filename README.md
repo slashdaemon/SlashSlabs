@@ -117,7 +117,7 @@ datapack.
 4. Adjust `config/slashslabs.json` if needed (see below) and restart.
 
 With `"required": true`, a player who declines the pack is disconnected with a clear message.
-Without the pack, slabs look like copper slabs.
+Without the pack, bottom slabs look like sculk sensors and top slabs like copper slabs.
 
 **Existing worlds:** only chunks generated after installing are smoothed. To smooth terrain you've
 already generated, stand in it and run `/slashslabs smooth <radius>`. It skips any column capped by

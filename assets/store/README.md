@@ -1,4 +1,13 @@
-# Store images — CurseForge / Modrinth
+# Store listing — CurseForge / Modrinth
+
+## Text
+
+- **Summary:** Server-side half-slab steps on every one-block terrain rise, so players walk the
+  world without jumping — no client mod needed.
+- **Description:** `description-modrinth.md` (tables) and `description-curseforge.md` (the same
+  text with the table as a list). Keep them in step with `README.md` and `CHANGELOG.md`.
+
+## Images
 
 Selected set for the 0.1.0 listing. Captured on a `devserver.py --band 26.1.2 --fresh` world,
 worldgen smoothing on, from the vanilla Prism client (`SlashSlabs-Vanilla-26.1.2`).
